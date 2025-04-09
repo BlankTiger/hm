@@ -4,12 +4,6 @@ import "flag"
 import "os"
 import "log/slog"
 
-type LogLeveler struct {
-}
-
-func (l *LogLeveler) Level() {
-}
-
 func main() {
 	dev := flag.Bool("dev", false, "symlinks the config files, so that changes are instant")
 	debug := flag.Bool("dbg", false, "set logging level to debug")
