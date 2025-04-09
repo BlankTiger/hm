@@ -1,6 +1,5 @@
 package main
 
-import "fmt"
 import "flag"
 import "os"
 import "log/slog"
@@ -25,7 +24,6 @@ func main() {
 	opts := slog.HandlerOptions{Level: &level}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &opts))
 	cli_args := "cli args"
-	logger.Info(cli_args, "DBG???", *debug)
 	logger.Debug(cli_args, "dev", *dev)
 	logger.Debug(cli_args, "dbg", *debug)
 	logger.Debug(cli_args, "targetdir", *targetdir)
@@ -33,7 +31,7 @@ func main() {
 	dirPath := "./config"
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
-		fmt.Printf("couldn't read dir: %v\n", err)
+		logger.Error("couldn't read dir", "err", err)
 		return
 	}
 
