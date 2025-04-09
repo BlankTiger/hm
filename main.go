@@ -4,6 +4,14 @@ import "flag"
 import "os"
 import "log/slog"
 
+type Lockfile struct {
+	installedConfigs  []Config
+	installedPrograms []Program
+}
+
+type Config struct{}
+type Program struct{}
+
 func main() {
 	dev := flag.Bool("dev", false, "symlinks the config files, so that changes are instant")
 	debug := flag.Bool("dbg", false, "set logging level to debug")
