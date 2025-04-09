@@ -3,14 +3,21 @@ package main
 import "flag"
 import "os"
 import "log/slog"
+import "encoding/json"
 
 type Lockfile struct {
 	installedConfigs  []Config
 	installedPrograms []Program
 }
 
-type Config struct{}
-type Program struct{}
+type Config struct {
+	name string
+}
+
+type Program struct {
+	name         string
+	requirements []string
+}
 
 func main() {
 	dev := flag.Bool("dev", false, "symlinks the config files, so that changes are instant")
