@@ -46,5 +46,6 @@ func main() {
 			continue
 		}
 
+		logger.Debug("copying", "from",
 	}
 }
