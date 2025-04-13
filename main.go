@@ -62,7 +62,7 @@ func main() {
 	}
 
 	// TODO: think if this is correct, for now just reset
-	lockfile.Configs = []lib.Config{}
+	*lockfile = lib.DefaultLockfile
 
 	for _, e := range entries {
 		if e.Type() != os.ModeDir {

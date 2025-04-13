@@ -24,9 +24,7 @@ type Lockfile struct {
 }
 
 var defaultLockfile = Lockfile{
-	Configs: []Config{
-		{Name: "abcd"},
-	},
+	Configs:  []Config{},
 	Programs: []Program{},
 }
 
