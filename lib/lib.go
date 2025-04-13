@@ -1,40 +1,39 @@
 package lib
 
 import (
-	"encoding/json"
+	// "encoding/json"
 	"errors"
 	"io"
-	// "log/slog"
 	"os"
 	"path/filepath"
 )
 
-type Lockfile struct {
-	installedConfigs  []Config
-	installedPrograms []Program
-}
-
-type Config struct {
-	name string
-}
-
-type Program struct {
-	name         string
-	requirements []string
-}
-
-func readLockfile(txt []byte) (*Lockfile, error) {
-	lockfile := Lockfile{}
-	err := json.Unmarshal(txt, &lockfile)
-	if err != nil {
-		return nil, err
-	}
-	return &lockfile, nil
-}
-
-func (l *Lockfile) marshal() ([]byte, error) {
-	return json.Marshal(*l)
-}
+// type Lockfile struct {
+// 	installedConfigs  []Config
+// 	installedPrograms []Program
+// }
+//
+// type Config struct {
+// 	name string
+// }
+//
+// type Program struct {
+// 	name         string
+// 	requirements []string
+// }
+//
+// func readLockfile(txt []byte) (*Lockfile, error) {
+// 	lockfile := Lockfile{}
+// 	err := json.Unmarshal(txt, &lockfile)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return &lockfile, nil
+// }
+//
+// func (l *Lockfile) marshal() ([]byte, error) {
+// 	return json.Marshal(*l)
+// }
 
 func Copy(from, to string) error {
 	info, err := os.Stat(from)
@@ -56,7 +55,18 @@ func copyDir(from, to string) error {
 	}
 	infoTo, err := os.Stat(to)
 	if err != nil {
-		return nil
+		if os.IsNotExist(err) {
+			err = os.MkdirAll(to, infoFrom.Mode())
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+	infoTo, err = os.Stat(to)
+	if err != nil {
+		return err
 	}
 
 	if !infoFrom.IsDir() {
@@ -66,14 +76,9 @@ func copyDir(from, to string) error {
 		return errors.New("to is not a directory")
 	}
 
-	err = os.MkdirAll(to, infoFrom.Mode())
-	if err != nil {
-		return nil
-	}
-
 	entries, err := os.ReadDir(from)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	for _, e := range entries {
