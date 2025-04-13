@@ -1,15 +1,21 @@
 package main
 
-import "flag"
-import "os"
-import "log/slog"
-
-// import "blanktiger/hm/lib"
+import (
+	"blanktiger/hm/lib"
+	"flag"
+	"log/slog"
+	"os"
+)
 
 func main() {
+	homeDir := os.Getenv("HOME")
 	dev := flag.Bool("dev", false, "symlinks the config files, so that changes are instant")
 	debug := flag.Bool("dbg", false, "set logging level to debug")
-	targetdir := flag.String("targetdir", "~/.config", "target for symlinks for debugging")
+	sourcedir := flag.String("sourcedir", homeDir+"/.config/homecfg", "source of configuration files, without the trailing /")
+	// TODO: UNCOMMENT AFTER FINISHING TESTING
+	// targetDirDefault := homeDir + "/.config"
+	targetDirDefault := homeDir + "/.configbkp"
+	targetdir := flag.String("targetdir", targetDirDefault, "target for symlinks for debugging, without the trailing /")
 	flag.Parse()
 
 	level := slog.LevelInfo
@@ -22,9 +28,10 @@ func main() {
 	cli_args := "cli args"
 	logger.Debug(cli_args, "dev", *dev)
 	logger.Debug(cli_args, "dbg", *debug)
+	logger.Debug(cli_args, "sourcedir", *sourcedir)
 	logger.Debug(cli_args, "targetdir", *targetdir)
 
-	dirPath := "./config"
+	dirPath := *sourcedir + "/config"
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		logger.Error("couldn't read dir", "err", err)
@@ -46,6 +53,9 @@ func main() {
 			continue
 		}
 
-		logger.Debug("copying", "from",
+		from := dirPath + "/" + name
+		to := *targetdir + "/" + name
+		logger.Debug("copying", "from", from, "to", to)
+		lib.Copy(from, to)
 	}
 }
