@@ -8,25 +8,29 @@ import (
 	"path/filepath"
 )
 
-type InstallationMode int
+type Mode int
 
 const (
-	// symlinks
-	Dev InstallationMode = iota
 	// hard copy
-	Cpy
+	Cpy Mode = iota
+	// symlinks
+	Dev
 )
 
-type Lockfile struct {
-	Mode     InstallationMode `json:"mode"`
-	Configs  []Config         `json:"configs"`
-	Programs []Program        `json:"programs"`
+type lockfile struct {
+	Version  string    `json:"version"`
+	Mode     Mode      `json:"mode"`
+	Configs  []Config  `json:"configs"`
+	Programs []Program `json:"programs"`
 }
 
-var defaultLockfile = Lockfile{
-	Configs:  []Config{},
-	Programs: []Program{},
+func NewLockfile() lockfile {
+	return lockfile{
+		Version: "0.1.0",
+	}
 }
+
+var DefaultLockfile = NewLockfile()
 
 type Config struct {
 	Name string `json:"name"`
@@ -43,7 +47,7 @@ func assert(condition bool, message string) {
 	}
 }
 
-func ReadOrCreateLockfile(path string) (*Lockfile, error) {
+func ReadOrCreateLockfile(path string) (*lockfile, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -52,13 +56,13 @@ func ReadOrCreateLockfile(path string) (*Lockfile, error) {
 				return nil, err
 			}
 			defer f.Close()
-			defaultLockfileBytes, _ := defaultLockfile.Marshal()
+			defaultLockfileBytes, _ := DefaultLockfile.Marshal()
 			written, err := f.Write(defaultLockfileBytes)
 			if err != nil {
 				return nil, err
 			}
 			assert(written == len(defaultLockfileBytes), "must write what is given")
-			return &defaultLockfile, nil
+			return &DefaultLockfile, nil
 		}
 		return nil, err
 	}
@@ -70,7 +74,7 @@ func ReadOrCreateLockfile(path string) (*Lockfile, error) {
 	return parseLockfile(txt)
 }
 
-func (l *Lockfile) Save(path string) error {
+func (l *lockfile) Save(path string) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return err
@@ -88,12 +92,12 @@ func (l *Lockfile) Save(path string) error {
 	return nil
 }
 
-func (l *Lockfile) AddConfig(name string) {
+func (l *lockfile) AddConfig(name string) {
 	l.Configs = append(l.Configs, Config{Name: name})
 }
 
-func parseLockfile(txt []byte) (*Lockfile, error) {
-	lockfile := Lockfile{}
+func parseLockfile(txt []byte) (*lockfile, error) {
+	lockfile := lockfile{}
 	err := json.Unmarshal(txt, &lockfile)
 	if err != nil {
 		return nil, err
@@ -101,7 +105,7 @@ func parseLockfile(txt []byte) (*Lockfile, error) {
 	return &lockfile, nil
 }
 
-func (l *Lockfile) Marshal() ([]byte, error) {
+func (l *lockfile) Marshal() ([]byte, error) {
 	return json.Marshal(*l)
 }
 
