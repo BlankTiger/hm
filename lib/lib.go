@@ -8,32 +8,59 @@ import (
 	"path/filepath"
 )
 
-// type Lockfile struct {
-// 	installedConfigs  []Config
-// 	installedPrograms []Program
-// }
+//	type Lockfile struct {
+//		installedConfigs  []Config
+//		installedPrograms []Program
+//	}
 //
-// type Config struct {
-// 	name string
-// }
+//	type Config struct {
+//		name string
+//	}
 //
-// type Program struct {
-// 	name         string
-// 	requirements []string
-// }
+//	type Program struct {
+//		name         string
+//		requirements []string
+//	}
 //
-// func readLockfile(txt []byte) (*Lockfile, error) {
-// 	lockfile := Lockfile{}
-// 	err := json.Unmarshal(txt, &lockfile)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &lockfile, nil
-// }
+//	func readLockfile(txt []byte) (*Lockfile, error) {
+//		lockfile := Lockfile{}
+//		err := json.Unmarshal(txt, &lockfile)
+//		if err != nil {
+//			return nil, err
+//		}
+//		return &lockfile, nil
+//	}
 //
-// func (l *Lockfile) marshal() ([]byte, error) {
-// 	return json.Marshal(*l)
-// }
+//	func (l *Lockfile) marshal() ([]byte, error) {
+//		return json.Marshal(*l)
+//	}
+
+func Symlink(from, to string) error {
+	_, err := os.Stat(from)
+	if err != nil {
+		return err
+	}
+	_, err = os.Stat(to)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil
+		}
+	}
+
+	err = os.Symlink(from, to)
+	if err != nil {
+		if os.IsExist(err) {
+			err := os.RemoveAll(to)
+			if err != nil {
+				return err
+			}
+			err = os.Symlink(from, to)
+		} else {
+			return err
+		}
+	}
+	return nil
+}
 
 func Copy(from, to string) error {
 	info, err := os.Stat(from)
@@ -48,10 +75,35 @@ func Copy(from, to string) error {
 	return err
 }
 
+// if file doesn't exist then that is still considered as not a symlink (and no error)
+func isSymlink(path string) (bool, error) {
+	info, err := os.Lstat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return info.Mode()&os.ModeSymlink != 0, nil
+}
+
 func copyDir(from, to string) error {
 	infoFrom, err := os.Stat(from)
 	if err != nil {
 		return err
+	}
+	{
+		link, err := isSymlink(to)
+		if err != nil {
+			return err
+		}
+		if link {
+			err = os.Remove(to)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	infoTo, err := os.Stat(to)
 	if err != nil {
@@ -64,6 +116,7 @@ func copyDir(from, to string) error {
 			return err
 		}
 	}
+
 	infoTo, err = os.Stat(to)
 	if err != nil {
 		return err

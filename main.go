@@ -55,11 +55,21 @@ func main() {
 
 		from := dirPath + "/" + name
 		to := *targetdir + "/" + name
-		logger.Debug("copying", "from", from, "to", to)
-		err := lib.Copy(from, to)
-		if err != nil {
-			logger.Error("couldn't copy", "err", err)
-			return
+
+		if *dev {
+			logger.Debug("symlinking", "from", from, "to", to)
+			err := lib.Symlink(from, to)
+			if err != nil {
+				logger.Error("couldn't symlink", "err", err)
+				return
+			}
+		} else {
+			logger.Debug("copying", "from", from, "to", to)
+			err := lib.Copy(from, to)
+			if err != nil {
+				logger.Error("couldn't copy", "err", err)
+				return
+			}
 		}
 	}
 }
