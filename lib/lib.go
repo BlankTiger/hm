@@ -34,10 +34,12 @@ var DefaultLockfile = NewLockfile()
 
 type Config struct {
 	Name string `json:"name"`
+	From string `json:"from"`
+	To   string `json:"to"`
 }
 
 type Program struct {
-	Name         string   `json:"name"`
+	Name         string   `json:"name`
 	Requirements []string `json:"requirements"`
 }
 
@@ -92,8 +94,8 @@ func (l *lockfile) Save(path string) error {
 	return nil
 }
 
-func (l *lockfile) AddConfig(name string) {
-	l.Configs = append(l.Configs, Config{Name: name})
+func (l *lockfile) AddConfig(config Config) {
+	l.Configs = append(l.Configs, config)
 }
 
 func parseLockfile(txt []byte) (*lockfile, error) {

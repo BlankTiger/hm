@@ -97,6 +97,6 @@ func main() {
 				return
 			}
 		}
-		lockfile.AddConfig(from)
+		lockfile.AddConfig(lib.Config{Name: name, From: from, To: to})
 	}
 }
