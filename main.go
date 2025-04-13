@@ -57,14 +57,14 @@ func main() {
 		to := *targetdir + "/" + name
 
 		if *dev {
-			logger.Debug("symlinking", "from", from, "to", to)
+			logger.Info("symlinking", "from", from, "to", to)
 			err := lib.Symlink(from, to)
 			if err != nil {
 				logger.Error("couldn't symlink", "err", err)
 				return
 			}
 		} else {
-			logger.Debug("copying", "from", from, "to", to)
+			logger.Info("copying", "from", from, "to", to)
 			err := lib.Copy(from, to)
 			if err != nil {
 				logger.Error("couldn't copy", "err", err)
