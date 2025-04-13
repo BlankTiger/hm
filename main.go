@@ -97,5 +97,6 @@ func main() {
 				return
 			}
 		}
+		lockfile.AddConfig(from)
 	}
 }
