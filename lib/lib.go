@@ -1,8 +1,13 @@
 package lib
 
-import "encoding/json"
-import "os"
-import "io"
+import (
+	"encoding/json"
+	"errors"
+	"io"
+	// "log/slog"
+	"os"
+	"path/filepath"
+)
 
 type Lockfile struct {
 	installedConfigs  []Config
@@ -37,16 +42,62 @@ func Copy(from, to string) error {
 		return err
 	}
 	if info.IsDir() {
-		targetInfo, err := os.Stat(to)
-		copyDir(from, to)
+		err = copyDir(from, to)
+	} else {
+		err = copyFile(from, to)
 	}
+	return err
 }
 
 func copyDir(from, to string) error {
+	infoFrom, err := os.Stat(from)
+	if err != nil {
+		return err
+	}
+	infoTo, err := os.Stat(to)
+	if err != nil {
+		return nil
+	}
+
+	if !infoFrom.IsDir() {
+		return errors.New("from is not a directory")
+	}
+	if !infoTo.IsDir() {
+		return errors.New("to is not a directory")
+	}
+
+	err = os.MkdirAll(to, infoFrom.Mode())
+	if err != nil {
+		return nil
+	}
+
+	entries, err := os.ReadDir(from)
+	if err != nil {
+		return nil
+	}
+
+	for _, e := range entries {
+		name := e.Name()
+		fromPath := filepath.Join(from, name)
+		toPath := filepath.Join(to, name)
+
+		if e.IsDir() {
+			err = copyDir(fromPath, toPath)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = copyFile(fromPath, toPath)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
-func CopyFile(from, to string) error {
+func copyFile(from, to string) error {
 	inputFile, err := os.Open(from)
 	if err != nil {
 		return err
