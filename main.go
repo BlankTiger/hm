@@ -44,14 +44,15 @@ func main() {
 		logger.Error("something went wrong while parsing the lockfile", "err", err)
 		return
 	}
-	logger.Info("current lockfile", "lockfile", lockfile)
+	beforeLockfile := *lockfile
+	logger.Info("lockfile before changes", "lockfile", beforeLockfile)
 	defer func() {
 		err := lockfile.Save(lockfilePath)
 		if err != nil {
 			logger.Error("something went wrong while trying to save the lockfile", "err", err)
 			return
 		}
-		logger.Info("lockfile successfully written", "final lockfile state", lockfile)
+		logger.Info("lockfile successfully written", "before", beforeLockfile, "after", lockfile)
 	}()
 
 	if *dev {
@@ -59,6 +60,9 @@ func main() {
 	} else {
 		lockfile.Mode = lib.Cpy
 	}
+
+	// TODO: think if this is correct, for now just reset
+	lockfile.Configs = []lib.Config{}
 
 	for _, e := range entries {
 		if e.Type() != os.ModeDir {
