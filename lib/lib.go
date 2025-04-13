@@ -18,16 +18,16 @@ const (
 )
 
 type Lockfile struct {
-	Mode              InstallationMode `json:"installationMode"`
-	InstalledConfigs  []Config         `json:"installedConfigs"`
-	InstalledPrograms []Program        `json:"installedPrograms"`
+	Mode     InstallationMode `json:"mode"`
+	Configs  []Config         `json:"configs"`
+	Programs []Program        `json:"programs"`
 }
 
 var defaultLockfile = Lockfile{
-	InstalledConfigs: []Config{
+	Configs: []Config{
 		{Name: "abcd"},
 	},
-	InstalledPrograms: []Program{},
+	Programs: []Program{},
 }
 
 type Config struct {
@@ -73,7 +73,7 @@ func ReadOrCreateLockfile(path string) (*Lockfile, error) {
 }
 
 func (l *Lockfile) Save(path string) error {
-	file, err := os.OpenFile(path, os.O_WRONLY, 0)
+	file, err := os.Create(path)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (l *Lockfile) Save(path string) error {
 }
 
 func (l *Lockfile) AddConfig(name string) {
-	l.InstalledConfigs = append(l.InstalledConfigs, Config{Name: name})
+	l.Configs = append(l.Configs, Config{Name: name})
 }
 
 func parseLockfile(txt []byte) (*Lockfile, error) {
