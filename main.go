@@ -55,7 +55,7 @@ func main() {
 
 		from := dirPath + "/" + name
 		to := *targetdir + "/" + name
-		logger.Debug("copying_toplevel", "from", from, "to", to)
+		logger.Debug("copying", "from", from, "to", to)
 		err := lib.Copy(from, to)
 		if err != nil {
 			logger.Error("couldn't copy", "err", err)
