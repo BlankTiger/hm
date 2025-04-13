@@ -1,39 +1,111 @@
 package lib
 
 import (
-	// "encoding/json"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
 	"path/filepath"
 )
 
-//	type Lockfile struct {
-//		installedConfigs  []Config
-//		installedPrograms []Program
-//	}
-//
-//	type Config struct {
-//		name string
-//	}
-//
-//	type Program struct {
-//		name         string
-//		requirements []string
-//	}
-//
-//	func readLockfile(txt []byte) (*Lockfile, error) {
-//		lockfile := Lockfile{}
-//		err := json.Unmarshal(txt, &lockfile)
-//		if err != nil {
-//			return nil, err
-//		}
-//		return &lockfile, nil
-//	}
-//
-//	func (l *Lockfile) marshal() ([]byte, error) {
-//		return json.Marshal(*l)
-//	}
+type InstallationMode int
+
+const (
+	// symlinks
+	Dev InstallationMode = iota
+	// hard copy
+	Cpy
+)
+
+type Lockfile struct {
+	Mode              InstallationMode `json:"installationMode"`
+	InstalledConfigs  []Config         `json:"installedConfigs"`
+	InstalledPrograms []Program        `json:"installedPrograms"`
+}
+
+var defaultLockfile = Lockfile{
+	InstalledConfigs: []Config{
+		{Name: "abcd"},
+	},
+	InstalledPrograms: []Program{},
+}
+
+type Config struct {
+	Name string `json:"name"`
+}
+
+type Program struct {
+	Name         string   `json:"name"`
+	Requirements []string `json:"requirements"`
+}
+
+func assert(condition bool, message string) {
+	if !condition {
+		panic(message)
+	}
+}
+
+func ReadOrCreateLockfile(path string) (*Lockfile, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			f, err := os.Create(path)
+			if err != nil {
+				return nil, err
+			}
+			defer f.Close()
+			defaultLockfileBytes, _ := defaultLockfile.Marshal()
+			written, err := f.Write(defaultLockfileBytes)
+			if err != nil {
+				return nil, err
+			}
+			assert(written == len(defaultLockfileBytes), "must write what is given")
+			return &defaultLockfile, nil
+		}
+		return nil, err
+	}
+	defer file.Close()
+	txt, err := io.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+	return parseLockfile(txt)
+}
+
+func (l *Lockfile) Save(path string) error {
+	file, err := os.OpenFile(path, os.O_WRONLY, 0)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	toWrite, err := l.Marshal()
+	if err != nil {
+		return err
+	}
+	written, err := file.Write(toWrite)
+	if err != nil {
+		return err
+	}
+	assert(written == len(toWrite), "must write what is given")
+	return nil
+}
+
+func (l *Lockfile) AddConfig(name string) {
+	l.InstalledConfigs = append(l.InstalledConfigs, Config{Name: name})
+}
+
+func parseLockfile(txt []byte) (*Lockfile, error) {
+	lockfile := Lockfile{}
+	err := json.Unmarshal(txt, &lockfile)
+	if err != nil {
+		return nil, err
+	}
+	return &lockfile, nil
+}
+
+func (l *Lockfile) Marshal() ([]byte, error) {
+	return json.Marshal(*l)
+}
 
 func Symlink(from, to string) error {
 	_, err := os.Stat(from)

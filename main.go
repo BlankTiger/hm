@@ -38,6 +38,28 @@ func main() {
 		return
 	}
 
+	lockfilePath := *targetdir + "/hmlock.json"
+	lockfile, err := lib.ReadOrCreateLockfile(lockfilePath)
+	if err != nil {
+		logger.Error("something went wrong while parsing the lockfile", "err", err)
+		return
+	}
+	logger.Info("current lockfile", "lockfile", lockfile)
+	defer func() {
+		err := lockfile.Save(lockfilePath)
+		if err != nil {
+			logger.Error("something went wrong while trying to save the lockfile", "err", err)
+			return
+		}
+		logger.Info("lockfile successfully written", "final lockfile state", lockfile)
+	}()
+
+	if *dev {
+		lockfile.Mode = lib.Dev
+	} else {
+		lockfile.Mode = lib.Cpy
+	}
+
 	for _, e := range entries {
 		if e.Type() != os.ModeDir {
 			continue
