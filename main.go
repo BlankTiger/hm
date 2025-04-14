@@ -79,6 +79,7 @@ func main() {
 
 		if name[0] == '.' {
 			logger.Info("configs", "skipping", name)
+			lockfile.SkippedConfigPaths = append(lockfile.SkippedConfigPaths, name)
 			continue
 		}
 

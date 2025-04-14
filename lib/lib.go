@@ -19,10 +19,11 @@ const (
 )
 
 type lockfile struct {
-	Version  string    `json:"version"`
-	Mode     Mode      `json:"mode"`
-	Configs  []Config  `json:"configs"`
-	Programs []Program `json:"programs"`
+	Version            string    `json:"version"`
+	Mode               Mode      `json:"mode"`
+	Configs            []Config  `json:"configs"`
+	SkippedConfigPaths []string  `json:"skippedConfigs"`
+	Programs           []Program `json:"programs"`
 }
 
 func NewLockfile() lockfile {
