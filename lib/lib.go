@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
 type Mode int
@@ -26,7 +27,7 @@ type lockfile struct {
 
 func NewLockfile() lockfile {
 	return lockfile{
-		Version: "0.1.0",
+		Version: "0.2.0",
 	}
 }
 
@@ -46,6 +47,37 @@ type Program struct {
 func assert(condition bool, message string) {
 	if !condition {
 		panic(message)
+	}
+}
+
+type LockfileDiff struct {
+	AddedConfigs   []Config `json:"addedConfigs"`
+	RemovedConfigs []Config `json:"removedConfigs"`
+	ModeChanged    bool     `json:"modeChanged"`
+	VersionChanged bool     `json:"versionChanged"`
+}
+
+// method should be called on an old version of the lockfile
+func (l *lockfile) Diff(newLockfile *lockfile) LockfileDiff {
+	addedConfigs := []Config{}
+	removedConfigs := []Config{}
+
+	for _, prevConf := range l.Configs {
+		if !slices.Contains(newLockfile.Configs, prevConf) {
+			removedConfigs = append(removedConfigs, prevConf)
+		}
+	}
+	for _, newConf := range newLockfile.Configs {
+		if !slices.Contains(l.Configs, newConf) {
+			addedConfigs = append(addedConfigs, newConf)
+		}
+	}
+
+	return LockfileDiff{
+		AddedConfigs:   addedConfigs,
+		RemovedConfigs: removedConfigs,
+		ModeChanged:    l.Mode != newLockfile.Mode,
+		VersionChanged: l.Version != newLockfile.Version,
 	}
 }
 

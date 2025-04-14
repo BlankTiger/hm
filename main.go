@@ -2,6 +2,7 @@ package main
 
 import (
 	"blanktiger/hm/lib"
+	"encoding/json"
 	"flag"
 	"log/slog"
 	"os"
@@ -44,25 +45,27 @@ func main() {
 		logger.Error("something went wrong while parsing the lockfile", "err", err)
 		return
 	}
-	beforeLockfile := *lockfile
-	logger.Info("lockfile before changes", "lockfile", beforeLockfile)
+	lockfileBefore := *lockfile
+	// logger.Info("lockfile before changes", "lockfile", lockfileBefore)
 	defer func() {
 		err := lockfile.Save(lockfilePath)
 		if err != nil {
 			logger.Error("something went wrong while trying to save the lockfile", "err", err)
 			return
 		}
-		logger.Info("lockfile successfully written", "before", beforeLockfile, "after", lockfile)
+		// logger.Info("lockfile successfully written", "before", lockfileBefore, "after", lockfileAfter)
 	}()
-
-	if *dev {
-		lockfile.Mode = lib.Dev
-	} else {
-		lockfile.Mode = lib.Cpy
-	}
 
 	// TODO: think if this is correct, for now just reset
 	*lockfile = lib.DefaultLockfile
+
+	if *dev {
+		logger.Debug("setting mode to dev", "dev should be", lib.Dev)
+		lockfile.Mode = lib.Dev
+	} else {
+		logger.Debug("setting mode to cpy", "cpy should be", lib.Cpy)
+		lockfile.Mode = lib.Cpy
+	}
 
 	for _, e := range entries {
 		if e.Type() != os.ModeDir {
@@ -99,4 +102,13 @@ func main() {
 		}
 		lockfile.AddConfig(lib.Config{Name: name, From: from, To: to})
 	}
+	defer func() {
+		lockDiff := lockfileBefore.Diff(lockfile)
+		lockDiffJson, err := json.Marshal(&lockDiff)
+		if err != nil {
+			logger.Error("couldnt marshal lockdiff", "err", err)
+			return
+		}
+		logger.Info("lockfile diff", "diff", lockDiff, "as json", string(lockDiffJson))
+	}()
 }
