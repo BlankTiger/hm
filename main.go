@@ -20,51 +20,48 @@ func main() {
 	targetdir := flag.String("targetdir", targetDirDefault, "target for symlinks for debugging, without the trailing /")
 	flag.Parse()
 
-	level := slog.LevelInfo
 	if *debug {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
-		level = slog.LevelDebug
+		lib.Level = slog.LevelDebug
 	}
-	opts := slog.HandlerOptions{Level: &level}
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &opts))
 	cli_args := "cli args"
-	logger.Debug(cli_args, "dev", *dev)
-	logger.Debug(cli_args, "dbg", *debug)
-	logger.Debug(cli_args, "sourcedir", *sourcedir)
-	logger.Debug(cli_args, "targetdir", *targetdir)
+	lib.Logger.Debug(cli_args, "dev", *dev)
+	lib.Logger.Debug(cli_args, "dbg", *debug)
+	lib.Logger.Debug(cli_args, "sourcedir", *sourcedir)
+	lib.Logger.Debug(cli_args, "targetdir", *targetdir)
 
 	dirPath := *sourcedir + "/config"
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
-		logger.Error("couldn't read dir", "err", err)
+		lib.Logger.Error("couldn't read dir", "err", err)
 		return
 	}
 
 	lockfilePath := *targetdir + "/hmlock.json"
 	lockfile, err := lib.ReadOrCreateLockfile(lockfilePath)
 	if err != nil {
-		logger.Error("something went wrong while parsing the lockfile", "err", err)
+		lib.Logger.Error("something went wrong while parsing the lockfile", "err", err)
 		return
 	}
 	lockfileBefore := *lockfile
-	// logger.Info("lockfile before changes", "lockfile", lockfileBefore)
+	// lib.Logger.Info("lockfile before changes", "lockfile", lockfileBefore)
 	defer func() {
 		err := lockfile.Save(lockfilePath)
 		if err != nil {
-			logger.Error("something went wrong while trying to save the lockfile", "err", err)
+			lib.Logger.Error("something went wrong while trying to save the lockfile", "err", err)
 			return
 		}
-		// logger.Info("lockfile successfully written", "before", lockfileBefore, "after", lockfileAfter)
+		// lib.Logger.Info("lockfile successfully written", "before", lockfileBefore, "after", lockfileAfter)
 	}()
 
 	// TODO: think if this is correct, for now just reset
 	*lockfile = lib.DefaultLockfile
 
 	if *dev {
-		logger.Debug("setting mode to dev", "dev should be", lib.Dev)
+		lib.Logger.Debug("setting mode to dev", "dev should be", lib.Dev)
 		lockfile.Mode = lib.Dev
 	} else {
-		logger.Debug("setting mode to cpy", "cpy should be", lib.Cpy)
+		lib.Logger.Debug("setting mode to cpy", "cpy should be", lib.Cpy)
 		lockfile.Mode = lib.Cpy
 	}
 
@@ -82,7 +79,7 @@ func main() {
 		to := *targetdir + "/" + name
 
 		if name[0] == '.' {
-			logger.Info("configs", "skipping", name)
+			lib.Logger.Info("configs", "skipping", name)
 			// skipping the dot
 			nameIfNotSkipped := name[1:]
 			fromIfNotSkipped := dirPath + "/" + nameIfNotSkipped
@@ -92,17 +89,17 @@ func main() {
 		}
 
 		if *dev {
-			logger.Info("symlinking", "from", from, "to", to)
+			lib.Logger.Info("symlinking", "from", from, "to", to)
 			err := lib.Symlink(from, to)
 			if err != nil {
-				logger.Error("couldn't symlink", "err", err)
+				lib.Logger.Error("couldn't symlink", "err", err)
 				return
 			}
 		} else {
-			logger.Info("copying", "from", from, "to", to)
+			lib.Logger.Info("copying", "from", from, "to", to)
 			err := lib.Copy(from, to)
 			if err != nil {
-				logger.Error("couldn't copy", "err", err)
+				lib.Logger.Error("couldn't copy", "err", err)
 				return
 			}
 		}
@@ -113,15 +110,22 @@ func main() {
 		lockDiff := lockfileBefore.Diff(lockfile)
 		lockDiffJson, err := json.Marshal(&lockDiff)
 		if err != nil {
-			logger.Error("couldnt marshal lockdiff", "err", err)
+			lib.Logger.Error("couldnt marshal lockdiff", "err", err)
 			return
 		}
-		logger.Info("lockfile diff", "diff", lockDiff, "as json", string(lockDiffJson))
+		lib.Logger.Info("lockfile diff", "diff", lockDiff, "as json", string(lockDiffJson))
 
-		logger.Info("removing configs that are no longer in the source")
+		lib.Logger.Info("removing configs that are no longer in the source")
 		err = lib.RemoveConfigsFromTarget(lockDiff.RemovedConfigs)
 		if err != nil {
-			logger.Error("something went wrong while removing a config", "mode", lockfile.Mode)
+			lib.Logger.Error("something went wrong while removing a config", "mode", lockfile.Mode)
+			return
+		}
+
+		lib.Logger.Info("removing configs that are skipped")
+		err = lib.RemoveConfigsFromTarget(lockDiff.NewlySkippedConfigs)
+		if err != nil {
+			lib.Logger.Error("something went wrong while removing a config", "mode", lockfile.Mode)
 			return
 		}
 	}
