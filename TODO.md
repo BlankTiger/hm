@@ -6,6 +6,7 @@ Done:
 - ignore `.git`
 - lockfiles
     + persisting info on what was copied
+- diffing for lockfiles
 
 Bugs:
 - in case of systemd, if I want to store the enabled targets, then they are always stored as
