@@ -102,7 +102,8 @@ func main() {
 		}
 		lockfile.AddConfig(lib.Config{Name: name, From: from, To: to})
 	}
-	defer func() {
+
+	{
 		lockDiff := lockfileBefore.Diff(lockfile)
 		lockDiffJson, err := json.Marshal(&lockDiff)
 		if err != nil {
@@ -110,5 +111,12 @@ func main() {
 			return
 		}
 		logger.Info("lockfile diff", "diff", lockDiff, "as json", string(lockDiffJson))
-	}()
+
+		logger.Info("removing configs that are no longer in the source")
+		err = lib.RemoveConfigsFromTarget(lockDiff.RemovedConfigs)
+		if err != nil {
+			logger.Error("something went wrong while removing a config", "mode", lockfile.Mode)
+			return
+		}
+	}
 }

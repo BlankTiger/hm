@@ -50,6 +50,16 @@ func assert(condition bool, message string) {
 	}
 }
 
+func RemoveConfigsFromTarget(configs []Config) error {
+	for _, c := range configs {
+		err := os.RemoveAll(c.To)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type LockfileDiff struct {
 	AddedConfigs   []Config `json:"addedConfigs"`
 	RemovedConfigs []Config `json:"removedConfigs"`
