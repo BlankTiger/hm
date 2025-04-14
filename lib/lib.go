@@ -37,7 +37,10 @@ func (l *lockfile) AppendSkippedConfig(config Config) {
 
 func NewLockfile() lockfile {
 	return lockfile{
-		Version: "0.1.0",
+		Version:        "0.1.0",
+		Configs:        []Config{},
+		SkippedConfigs: []Config{},
+		Programs:       []Program{},
 	}
 }
 
@@ -62,6 +65,7 @@ func assert(condition bool, message string) {
 
 func RemoveConfigsFromTarget(configs []Config) error {
 	for _, c := range configs {
+		Logger.Info("removing config from target", "target", c.To)
 		err := os.RemoveAll(c.To)
 		if err != nil {
 			return err
@@ -83,23 +87,40 @@ type LockfileDiff struct {
 func (l *lockfile) Diff(newLockfile *lockfile) LockfileDiff {
 	addedConfigs := []Config{}
 	removedConfigs := []Config{}
+	newlySkippedConfigs := []Config{}
+	previouslySkippedConfigs := []Config{}
 
 	for _, prevConf := range l.Configs {
 		if !slices.Contains(newLockfile.Configs, prevConf) {
 			removedConfigs = append(removedConfigs, prevConf)
 		}
+
+		Logger.Debug("DIFFING", "SkippedConfigs", newLockfile.SkippedConfigs, "prevConf", prevConf)
+		if slices.Contains(newLockfile.SkippedConfigs, prevConf) && !slices.Contains(l.SkippedConfigs, prevConf) {
+			newlySkippedConfigs = append(newlySkippedConfigs, prevConf)
+		}
 	}
+
 	for _, newConf := range newLockfile.Configs {
 		if !slices.Contains(l.Configs, newConf) {
 			addedConfigs = append(addedConfigs, newConf)
 		}
+
+	}
+
+	for _, prevSkippedConf := range l.SkippedConfigs {
+		if !slices.Contains(newLockfile.SkippedConfigs, prevSkippedConf) {
+			previouslySkippedConfigs = append(previouslySkippedConfigs, prevSkippedConf)
+		}
 	}
 
 	return LockfileDiff{
-		AddedConfigs:   addedConfigs,
-		RemovedConfigs: removedConfigs,
-		ModeChanged:    l.Mode != newLockfile.Mode,
-		VersionChanged: l.Version != newLockfile.Version,
+		AddedConfigs:             addedConfigs,
+		RemovedConfigs:           removedConfigs,
+		NewlySkippedConfigs:      newlySkippedConfigs,
+		PreviouslySkippedConfigs: previouslySkippedConfigs,
+		ModeChanged:              l.Mode != newLockfile.Mode,
+		VersionChanged:           l.Version != newLockfile.Version,
 	}
 }
 
