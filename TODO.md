@@ -14,6 +14,7 @@ Bugs:
   targets because of this)
 
 TODO:
+- move functionality from the main loop to lib.go
 - lockfile, need to probably implement some kind of hashing to not overwrite files if there are some
   new ones in directories that are managed with `hm` (this shouldn't happen though, because everything
   should be managed via `hm`)
