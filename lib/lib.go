@@ -39,7 +39,7 @@ type Config struct {
 }
 
 type Program struct {
-	Name         string   `json:"name`
+	Name         string   `json:"name"`
 	Requirements []string `json:"requirements"`
 }
 
