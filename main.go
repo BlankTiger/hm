@@ -84,8 +84,15 @@ func main() {
 			nameIfNotSkipped := name[1:]
 			fromIfNotSkipped := dirPath + "/" + nameIfNotSkipped
 			toIfNotSkipped := *targetdir + "/" + nameIfNotSkipped
-			lockfile.AppendSkippedConfig(lib.Config{From: fromIfNotSkipped, To: toIfNotSkipped, Name: nameIfNotSkipped})
+			config := lib.NewConfig(nameIfNotSkipped, fromIfNotSkipped, toIfNotSkipped, nil)
+			lockfile.AppendSkippedConfig(config)
 			continue
+		}
+
+		requirements, err := lib.ParseRequirements(from)
+		if err != nil {
+			lib.Logger.Error("something went wrong while trying to parse requirements", "err", err)
+			return
 		}
 
 		if *dev {
@@ -103,11 +110,13 @@ func main() {
 				return
 			}
 		}
-		lockfile.AddConfig(lib.Config{Name: name, From: from, To: to})
+
+		config := lib.NewConfig(name, from, to, &requirements)
+		lockfile.AddConfig(config)
 	}
 
+	lockDiff := lockfileBefore.Diff(lockfile)
 	{
-		lockDiff := lockfileBefore.Diff(lockfile)
 		lockDiffJson, err := json.Marshal(&lockDiff)
 		if err != nil {
 			lib.Logger.Error("couldnt marshal lockdiff", "err", err)
@@ -129,4 +138,5 @@ func main() {
 			return
 		}
 	}
+
 }

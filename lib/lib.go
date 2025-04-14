@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"slices"
 )
 
 type Mode int
@@ -24,38 +23,91 @@ const (
 )
 
 type lockfile struct {
-	Version        string    `json:"version"`
-	Mode           Mode      `json:"mode"`
-	Configs        []Config  `json:"configs"`
-	SkippedConfigs []Config  `json:"skippedConfigs"`
-	Programs       []Program `json:"programs"`
+	Version        string   `json:"version"`
+	Mode           Mode     `json:"mode"`
+	Configs        []config `json:"configs"`
+	SkippedConfigs []config `json:"skippedConfigs"`
 }
 
-func (l *lockfile) AppendSkippedConfig(config Config) {
+func (l *lockfile) AppendSkippedConfig(config config) {
 	l.SkippedConfigs = append(l.SkippedConfigs, config)
 }
 
 func NewLockfile() lockfile {
 	return lockfile{
 		Version:        "0.1.0",
-		Configs:        []Config{},
-		SkippedConfigs: []Config{},
-		Programs:       []Program{},
+		Configs:        []config{},
+		SkippedConfigs: []config{},
 	}
 }
 
 var DefaultLockfile = NewLockfile()
 
-type Config struct {
-	Name string `json:"name"`
-	From string `json:"from"`
-	To   string `json:"to"`
+type config struct {
+	Name         string    `json:"name"`
+	From         string    `json:"from"`
+	To           string    `json:"to"`
+	Requirements []Program `json:"requirements"`
 }
 
-type Program struct {
-	Name         string   `json:"name"`
-	Requirements []string `json:"requirements"`
+func NewConfig(name, from, to string, requirements *[]Program) config {
+	reqs := &[]Program{}
+	if requirements != nil {
+		reqs = requirements
+	}
+	return config{
+		Name:         name,
+		From:         from,
+		To:           to,
+		Requirements: *reqs,
+	}
 }
+
+func (c *config) Equal(o *config) bool {
+	return c.Name == o.Name && c.From == o.From && c.To == o.To
+}
+
+func ContainsConfig(configs []config, c config) bool {
+	for _, config := range configs {
+		if config.Equal(&c) {
+			return true
+		}
+	}
+	return false
+}
+
+type InstallationMethod string
+
+const (
+	apt    = "apt"
+	pacman = "pacman"
+	cargo  = "cargo"
+)
+
+type Program struct {
+	Name               string             `json:"name"`
+	Install            string             `json:"installation"`
+	Uninstall          string             `json:"uninstall"`
+	InstallationMethod InstallationMethod `json:"installationMethod"`
+}
+
+func ParseRequirements(path string) (res *Program, err error) {
+	installPath := path + "/INSTALL"
+	// uninstallPath := path + "/UNINSTALL"
+	// requirementsPath := path + "/REQUIREMENTS"
+
+	installFile, err := os.Open(installPath)
+	if err != nil {
+		return nil, err
+	}
+	defer installFile.Close()
+
+	// uninstallFile, err
+	return res, err
+}
+
+// func ExecuteInstall(info Program) error {}
+// func ExecuteUninstall(info Program) error {}
 
 func assert(condition bool, message string) {
 	if !condition {
@@ -63,7 +115,7 @@ func assert(condition bool, message string) {
 	}
 }
 
-func RemoveConfigsFromTarget(configs []Config) error {
+func RemoveConfigsFromTarget(configs []config) error {
 	for _, c := range configs {
 		Logger.Info("removing config from target", "target", c.To)
 		err := os.RemoveAll(c.To)
@@ -75,41 +127,41 @@ func RemoveConfigsFromTarget(configs []Config) error {
 }
 
 type LockfileDiff struct {
-	AddedConfigs             []Config `json:"addedConfigs"`
-	RemovedConfigs           []Config `json:"removedConfigs"`
-	NewlySkippedConfigs      []Config `json:"newlySkippedConfigs"`
-	PreviouslySkippedConfigs []Config `json:"previouslySkippedConfigs"`
+	AddedConfigs             []config `json:"addedConfigs"`
+	RemovedConfigs           []config `json:"removedConfigs"`
+	NewlySkippedConfigs      []config `json:"newlySkippedConfigs"`
+	PreviouslySkippedConfigs []config `json:"previouslySkippedConfigs"`
 	ModeChanged              bool     `json:"modeChanged"`
 	VersionChanged           bool     `json:"versionChanged"`
 }
 
 // method should be called on an old version of the lockfile
 func (l *lockfile) Diff(newLockfile *lockfile) LockfileDiff {
-	addedConfigs := []Config{}
-	removedConfigs := []Config{}
-	newlySkippedConfigs := []Config{}
-	previouslySkippedConfigs := []Config{}
+	addedConfigs := []config{}
+	removedConfigs := []config{}
+	newlySkippedConfigs := []config{}
+	previouslySkippedConfigs := []config{}
 
 	for _, prevConf := range l.Configs {
-		if !slices.Contains(newLockfile.Configs, prevConf) {
+		if !ContainsConfig(newLockfile.Configs, prevConf) {
 			removedConfigs = append(removedConfigs, prevConf)
 		}
 
 		Logger.Debug("DIFFING", "SkippedConfigs", newLockfile.SkippedConfigs, "prevConf", prevConf)
-		if slices.Contains(newLockfile.SkippedConfigs, prevConf) && !slices.Contains(l.SkippedConfigs, prevConf) {
+		if ContainsConfig(newLockfile.SkippedConfigs, prevConf) && !ContainsConfig(l.SkippedConfigs, prevConf) {
 			newlySkippedConfigs = append(newlySkippedConfigs, prevConf)
 		}
 	}
 
 	for _, newConf := range newLockfile.Configs {
-		if !slices.Contains(l.Configs, newConf) {
+		if !ContainsConfig(l.Configs, newConf) {
 			addedConfigs = append(addedConfigs, newConf)
 		}
 
 	}
 
 	for _, prevSkippedConf := range l.SkippedConfigs {
-		if !slices.Contains(newLockfile.SkippedConfigs, prevSkippedConf) {
+		if !ContainsConfig(newLockfile.SkippedConfigs, prevSkippedConf) {
 			previouslySkippedConfigs = append(previouslySkippedConfigs, prevSkippedConf)
 		}
 	}
@@ -169,7 +221,7 @@ func (l *lockfile) Save(path string) error {
 	return nil
 }
 
-func (l *lockfile) AddConfig(config Config) {
+func (l *lockfile) AddConfig(config config) {
 	l.Configs = append(l.Configs, config)
 }
 
