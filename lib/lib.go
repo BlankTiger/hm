@@ -19,16 +19,20 @@ const (
 )
 
 type lockfile struct {
-	Version            string    `json:"version"`
-	Mode               Mode      `json:"mode"`
-	Configs            []Config  `json:"configs"`
-	SkippedConfigPaths []string  `json:"skippedConfigs"`
-	Programs           []Program `json:"programs"`
+	Version        string    `json:"version"`
+	Mode           Mode      `json:"mode"`
+	Configs        []Config  `json:"configs"`
+	SkippedConfigs []Config  `json:"skippedConfigs"`
+	Programs       []Program `json:"programs"`
+}
+
+func (l *lockfile) AppendSkippedConfig(config Config) {
+	l.SkippedConfigs = append(l.SkippedConfigs, config)
 }
 
 func NewLockfile() lockfile {
 	return lockfile{
-		Version: "0.2.0",
+		Version: "0.1.0",
 	}
 }
 
@@ -62,10 +66,12 @@ func RemoveConfigsFromTarget(configs []Config) error {
 }
 
 type LockfileDiff struct {
-	AddedConfigs   []Config `json:"addedConfigs"`
-	RemovedConfigs []Config `json:"removedConfigs"`
-	ModeChanged    bool     `json:"modeChanged"`
-	VersionChanged bool     `json:"versionChanged"`
+	AddedConfigs             []Config `json:"addedConfigs"`
+	RemovedConfigs           []Config `json:"removedConfigs"`
+	NewlySkippedConfigs      []Config `json:"newlySkippedConfigs"`
+	PreviouslySkippedConfigs []Config `json:"previouslySkippedConfigs"`
+	ModeChanged              bool     `json:"modeChanged"`
+	VersionChanged           bool     `json:"versionChanged"`
 }
 
 // method should be called on an old version of the lockfile

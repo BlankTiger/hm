@@ -8,8 +8,9 @@ import (
 	"os"
 )
 
+var homeDir = os.Getenv("HOME")
+
 func main() {
-	homeDir := os.Getenv("HOME")
 	dev := flag.Bool("dev", false, "symlinks the config files, so that changes are instant")
 	debug := flag.Bool("dbg", false, "set logging level to debug")
 	sourcedir := flag.String("sourcedir", homeDir+"/.config/homecfg", "source of configuration files, without the trailing /")
@@ -77,14 +78,18 @@ func main() {
 			continue
 		}
 
-		if name[0] == '.' {
-			logger.Info("configs", "skipping", name)
-			lockfile.SkippedConfigPaths = append(lockfile.SkippedConfigPaths, name)
-			continue
-		}
-
 		from := dirPath + "/" + name
 		to := *targetdir + "/" + name
+
+		if name[0] == '.' {
+			logger.Info("configs", "skipping", name)
+			// skipping the dot
+			nameIfNotSkipped := name[1:]
+			fromIfNotSkipped := dirPath + "/" + nameIfNotSkipped
+			toIfNotSkipped := *targetdir + "/" + nameIfNotSkipped
+			lockfile.AppendSkippedConfig(lib.Config{From: fromIfNotSkipped, To: toIfNotSkipped, Name: nameIfNotSkipped})
+			continue
+		}
 
 		if *dev {
 			logger.Info("symlinking", "from", from, "to", to)
