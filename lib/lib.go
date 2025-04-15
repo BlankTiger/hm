@@ -121,8 +121,10 @@ type InstallationInstruction struct {
 type UninstallationInstructions struct{}
 
 func ParseRequirements(path string) (res *Requirements, err error) {
+	Logger.Debug("parsing requirements", "path", path)
 	res = &Requirements{}
 	{
+		Logger.Debug("parsing installation instructions")
 		installationInstructions, err := parseInstallationInstructions(path)
 		if err != nil {
 			return nil, err
@@ -131,10 +133,13 @@ func ParseRequirements(path string) (res *Requirements, err error) {
 	}
 
 	{
+		// TODO: implement
+		// Logger.Debug("parsing uninstallation instructions")
 		// uninstallationInstructions, err := parseUinstallationInstructions(path)
 	}
 
 	{
+		Logger.Debug("parsing dependencies")
 		dependencies, err := parseDependencies(path)
 		if err != nil {
 			return nil, err
@@ -222,6 +227,9 @@ func parseDependencies(path string) (res []InstallationInstruction, err error) {
 
 	lines := strings.SplitSeq(string(txtBytes), "\n")
 	for line := range lines {
+		if line == "" {
+			continue
+		}
 		instructions, err := parseSingleInstallationInstruction(line)
 		if err != nil {
 			return nil, err
