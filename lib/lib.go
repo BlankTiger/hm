@@ -118,6 +118,7 @@ type InstallationInstruction struct {
 	Pkg    string             `json:"pkg"`
 }
 
+// TODO: think what this should include
 type UninstallationInstructions struct{}
 
 func ParseRequirements(path string) (res *Requirements, err error) {
@@ -202,7 +203,7 @@ func parseSingleInstallationInstruction(inst string) (res *InstallationInstructi
 	return res, nil
 }
 
-func parseUinstallationInstructions(path string) (res *InstallationInstruction, err error) {
+func parseUinstallationInstructions(path string) (res *UninstallationInstructions, err error) {
 	panic("unimplemented")
 	// return res, err
 }
@@ -240,7 +241,10 @@ func parseDependencies(path string) (res []InstallationInstruction, err error) {
 	return res, err
 }
 
-// func ExecuteInstall(info Program) error {}
+func ExecuteInstall(info Requirements) error {
+	return nil
+}
+
 // func ExecuteUninstall(info Program) error {}
 
 func assert(condition bool, message string) {
