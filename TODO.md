@@ -15,6 +15,8 @@ Bugs:
   targets because of this)
 
 TODO:
+
+has to depend on the lockfile (we have to store information on how the package was installed)
 - move functionality from the main loop to lib.go
 - lockfile, need to probably implement some kind of hashing to not overwrite files if there are some
   new ones in directories that are managed with `hm` (this shouldn't happen though, because everything
@@ -26,3 +28,24 @@ TODO:
     + parsing REQUIREMENTS -> some requirements will require different installation methods (cargo,
     apt, etc.)
 - uninstalling with instructions from UNINSTALL
+
+
+
+# `INSTALL` format
+
+different ways to install packages:
+- `system:<pkg>`, detects the right way to install package based on the running system
+- `apt:<pkg>`, `pacman:<pkg>`, installs directly using one of those
+- `bash:<instructions`, just executes the bash commands directly like a script
+- specyfing many options for installation (if one fails or w/e) - TBD, for now maybe just parse the single option
+
+# `UNINSTALL` format
+
+maybe should be treated as an `additional` way to provide information on what
+to remove, whatever can be guessed based on the installation method could be
+supplemented by this, if not present then only what is guessed based on the
+installation method is done
+
+# `DEPENDENCIES` format
+
+basically `INSTALL` format, but many lines for many dependencies (obv)
