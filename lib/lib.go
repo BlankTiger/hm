@@ -44,14 +44,14 @@ func NewLockfile() lockfile {
 var DefaultLockfile = NewLockfile()
 
 type config struct {
-	Name         string    `json:"name"`
-	From         string    `json:"from"`
-	To           string    `json:"to"`
-	Requirements []Program `json:"requirements"`
+	Name         string       `json:"name"`
+	From         string       `json:"from"`
+	To           string       `json:"to"`
+	Requirements Requirements `json:"requirements"`
 }
 
-func NewConfig(name, from, to string, requirements *[]Program) config {
-	reqs := &[]Program{}
+func NewConfig(name, from, to string, requirements *Requirements) config {
+	reqs := &Requirements{}
 	if requirements != nil {
 		reqs = requirements
 	}
@@ -82,13 +82,24 @@ const (
 	apt    = "apt"
 	pacman = "pacman"
 	cargo  = "cargo"
+	system = "system"
+	bash   = "bash"
 )
 
-type Program struct {
-	Name               string             `json:"name"`
-	Install            string             `json:"installation"`
-	Uninstall          string             `json:"uninstall"`
-	InstallationMethod InstallationMethod `json:"installationMethod"`
+func isValidInstallationMethod(method string) bool {
+	switch method {
+	case apt, pacman, cargo, system, bash:
+		return true
+	default:
+		return false
+	}
+}
+
+type Requirements struct {
+	Name         string                     `json:"name"`
+	Install      InstallationInstruction    `json:"installationInstructions"`
+	Uninstall    UninstallationInstructions `json:"uninstallInstructions"`
+	Dependencies []InstallationInstruction  `json:"dependencies"`
 }
 
 func ParseRequirements(path string) (res *Program, err error) {
