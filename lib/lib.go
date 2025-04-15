@@ -3,10 +3,12 @@ package lib
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Mode int
@@ -95,6 +97,15 @@ func isValidInstallationMethod(method string) bool {
 	}
 }
 
+// TODO:
+// func uninstallationMethodBasedOnInstallationMethod(instMethod InstallationMethod) UninstallationInstructions
+
+const (
+	INSTALL_PATH_POSTFIX      = "/INSTALL"
+	UNINSTALL_PATH_POSTFIX    = "/UNINSTALL"
+	DEPENDENCIES_PATH_POSTFIX = "/DEPENDENCIES"
+)
+
 type Requirements struct {
 	Name         string                     `json:"name"`
 	Install      InstallationInstruction    `json:"installationInstructions"`
@@ -102,12 +113,38 @@ type Requirements struct {
 	Dependencies []InstallationInstruction  `json:"dependencies"`
 }
 
-func ParseRequirements(path string) (res *Program, err error) {
-	installPath := path + "/INSTALL"
-	// uninstallPath := path + "/UNINSTALL"
-	// requirementsPath := path + "/REQUIREMENTS"
+type InstallationInstruction struct {
+	Method InstallationMethod `json:"method"`
+	Pkg    string             `json:"pkg"`
+}
 
-	installFile, err := os.Open(installPath)
+type UninstallationInstructions struct{}
+
+func ParseRequirements(path string) (res *Requirements, err error) {
+	res = &Requirements{}
+	{
+		installationInstructions, err := parseInstallationInstructions(path)
+		if err != nil {
+			return nil, err
+		}
+		res.Install = *installationInstructions
+	}
+
+	{
+		// uninstallationInstructions, err := parseUinstallationInstructions(path)
+	}
+
+	{
+		dependencies, err := parseDependencies(path)
+		if err != nil {
+			return nil, err
+		}
+		res.Dependencies = dependencies
+	}
+
+	return res, err
+}
+
 func parseInstallationInstructions(path string) (res *InstallationInstruction, err error) {
 	res = &InstallationInstruction{}
 	file, err := os.Open(path + INSTALL_PATH_POSTFIX)
@@ -160,8 +197,38 @@ func parseSingleInstallationInstruction(inst string) (res *InstallationInstructi
 	return res, nil
 }
 
+func parseUinstallationInstructions(path string) (res *InstallationInstruction, err error) {
+	panic("unimplemented")
+	// return res, err
+}
 
-	// uninstallFile, err
+func parseDependencies(path string) (res []InstallationInstruction, err error) {
+	res = []InstallationInstruction{}
+	file, err := os.Open(path + DEPENDENCIES_PATH_POSTFIX)
+	if err != nil {
+		// NOTE: file not existing is not an error in this case (can have
+		// config files without dependencies obviously)
+		if os.IsNotExist(err) {
+			return res, nil
+		}
+		return nil, err
+	}
+	defer file.Close()
+
+	txtBytes, err := io.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+
+	lines := strings.SplitSeq(string(txtBytes), "\n")
+	for line := range lines {
+		instructions, err := parseSingleInstallationInstruction(line)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, *instructions)
+	}
+
 	return res, err
 }
 
