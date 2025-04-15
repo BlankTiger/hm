@@ -111,7 +111,7 @@ func main() {
 			}
 		}
 
-		config := lib.NewConfig(name, from, to, &requirements)
+		config := lib.NewConfig(name, from, to, requirements)
 		lockfile.AddConfig(config)
 	}
 
