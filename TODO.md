@@ -28,6 +28,11 @@ has to depend on the lockfile (we have to store information on how the package w
     + parsing REQUIREMENTS -> some requirements will require different installation methods (cargo,
     apt, etc.)
 - uninstalling with instructions from UNINSTALL
+- interface for:
+    + uninstalling single packages
+    + installing single packages
+    + by default maybe install everything that is copied over(?), next run
+      should omit already installed stuff based on the lockfile
 
 
 
