@@ -108,10 +108,58 @@ func ParseRequirements(path string) (res *Program, err error) {
 	// requirementsPath := path + "/REQUIREMENTS"
 
 	installFile, err := os.Open(installPath)
+func parseInstallationInstructions(path string) (res *InstallationInstruction, err error) {
+	res = &InstallationInstruction{}
+	file, err := os.Open(path + INSTALL_PATH_POSTFIX)
 	if err != nil {
+		// NOTE: file not existing is not an error in this case (can have config
+		// files without installation instructions obviously)
+		if os.IsNotExist(err) {
+			return res, nil
+		}
 		return nil, err
 	}
-	defer installFile.Close()
+	defer file.Close()
+
+	{
+		txtBytes, err := io.ReadAll(file)
+		if err != nil {
+			return nil, err
+		}
+
+		txt := string(txtBytes)
+		res, err = parseSingleInstallationInstruction(txt)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return res, nil
+}
+
+func parseSingleInstallationInstruction(inst string) (res *InstallationInstruction, err error) {
+	res = &InstallationInstruction{}
+
+	{
+		linesCount := strings.Count(inst, "\n")
+		assert(linesCount <= 1, "think on how to handle multiple installation instructions if we want them in the future")
+	}
+
+	parts := strings.Split(inst, ":")
+	{
+		method := parts[0]
+		errMsg := fmt.Sprintf("must be an implemented, valid installation method, instead got: '%s'", method)
+		assert(isValidInstallationMethod(method), errMsg)
+		res.Method = InstallationMethod(method)
+	}
+
+	{
+		pkg := parts[1]
+		res.Pkg = strings.Trim(pkg, "\n\t")
+	}
+	return res, nil
+}
+
 
 	// uninstallFile, err
 	return res, err
