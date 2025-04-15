@@ -13,6 +13,8 @@ var homeDir = os.Getenv("HOME")
 func main() {
 	dev := flag.Bool("dev", false, "symlinks the config files, so that changes are instant")
 	debug := flag.Bool("dbg", false, "set logging level to debug")
+	onlyInstall := flag.Bool("only-install", false, "doesnt copy configs over, only installs the packages that would be copied over based on their INSTALL instructions")
+	installPkg := flag.String("install", "", "installs only the specified package using the INSTALL instructions (if there are any specified)")
 	sourcedir := flag.String("sourcedir", homeDir+"/.config/homecfg", "source of configuration files, without the trailing /")
 	// TODO: UNCOMMENT AFTER FINISHING TESTING
 	// targetDirDefault := homeDir + "/.config"
@@ -27,6 +29,8 @@ func main() {
 	cli_args := "cli args"
 	lib.Logger.Debug(cli_args, "dev", *dev)
 	lib.Logger.Debug(cli_args, "dbg", *debug)
+	lib.Logger.Debug(cli_args, "only-install", *onlyInstall)
+	lib.Logger.Debug(cli_args, "install", *installPkg)
 	lib.Logger.Debug(cli_args, "sourcedir", *sourcedir)
 	lib.Logger.Debug(cli_args, "targetdir", *targetdir)
 
@@ -44,14 +48,12 @@ func main() {
 		return
 	}
 	lockfileBefore := *lockfile
-	// lib.Logger.Info("lockfile before changes", "lockfile", lockfileBefore)
 	defer func() {
 		err := lockfile.Save(lockfilePath)
 		if err != nil {
 			lib.Logger.Error("something went wrong while trying to save the lockfile", "err", err)
 			return
 		}
-		// lib.Logger.Info("lockfile successfully written", "before", lockfileBefore, "after", lockfileAfter)
 	}()
 
 	// TODO: think if this is correct, for now just reset
