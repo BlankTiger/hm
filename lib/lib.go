@@ -49,19 +49,25 @@ type config struct {
 	Name         string       `json:"name"`
 	From         string       `json:"from"`
 	To           string       `json:"to"`
-	Requirements Requirements `json:"requirements"`
+	Requirements requirements `json:"requirements"`
+	InstallInfo  installInfo  `json:"installationInfo"`
 }
 
-func NewConfig(name, from, to string, requirements *Requirements) config {
-	reqs := &Requirements{}
-	if requirements != nil {
-		reqs = requirements
+type installInfo struct {
+	IsInstalled      bool   `json:"isInstalled"`
+	InstallationTime string `json:"installationTime"`
+}
+
+func NewConfig(name, from, to string, reqs *requirements) config {
+	usedReqs := &requirements{}
+	if reqs != nil {
+		usedReqs = reqs
 	}
 	return config{
 		Name:         name,
 		From:         from,
 		To:           to,
-		Requirements: *reqs,
+		Requirements: *usedReqs,
 	}
 }
 
@@ -106,7 +112,7 @@ const (
 	DEPENDENCIES_PATH_POSTFIX = "/DEPENDENCIES"
 )
 
-type Requirements struct {
+type requirements struct {
 	Name         string                     `json:"name"`
 	Install      InstallationInstruction    `json:"installationInstructions"`
 	Uninstall    UninstallationInstructions `json:"uninstallInstructions"`
@@ -121,9 +127,9 @@ type InstallationInstruction struct {
 // TODO: think what this should include
 type UninstallationInstructions struct{}
 
-func ParseRequirements(path string) (res *Requirements, err error) {
+func ParseRequirements(path string) (res *requirements, err error) {
 	Logger.Debug("parsing requirements", "path", path)
-	res = &Requirements{}
+	res = &requirements{}
 	{
 		Logger.Debug("parsing installation instructions")
 		installationInstructions, err := parseInstallationInstructions(path)
@@ -241,7 +247,7 @@ func parseDependencies(path string) (res []InstallationInstruction, err error) {
 	return res, err
 }
 
-func ExecuteInstall(info Requirements) error {
+func ExecuteInstall(info requirements) error {
 	return nil
 }
 
