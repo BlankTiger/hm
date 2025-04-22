@@ -13,8 +13,15 @@ var homeDir = os.Getenv("HOME")
 func main() {
 	dev := flag.Bool("dev", false, "symlinks the config files, so that changes are instant")
 	debug := flag.Bool("dbg", false, "set logging level to debug")
+
+	install := flag.Bool("install", false, "whether to install packages using INSTALL instructions found in config folders")
 	onlyInstall := flag.Bool("only-install", false, "doesnt copy configs over, only installs the packages that would be copied over based on their INSTALL instructions")
-	installPkg := flag.String("install", "", "installs only the specified package using the INSTALL instructions (if there are any specified)")
+
+	uninstall := flag.Bool("uninstall", false, "whether to uninstall packages using INSTALL instructions found in config folders")
+	onlyUninstall := flag.Bool("only-uninstall", false, "doesnt copy configs over, only uninstalls the packages for configs that would be removed based on their instructions")
+
+	pkgs := flag.String("pkgs", "", "installs/uninstalls only the packages specified by this argument, empty means work on all active, non-hidden configs")
+
 	sourcedir := flag.String("sourcedir", homeDir+"/.config/homecfg", "source of configuration files, without the trailing /")
 	// TODO: UNCOMMENT AFTER FINISHING TESTING
 	// targetDirDefault := homeDir + "/.config"
@@ -29,8 +36,11 @@ func main() {
 	cli_args := "cli args"
 	lib.Logger.Debug(cli_args, "dev", *dev)
 	lib.Logger.Debug(cli_args, "dbg", *debug)
+	lib.Logger.Debug(cli_args, "install", *install)
 	lib.Logger.Debug(cli_args, "only-install", *onlyInstall)
-	lib.Logger.Debug(cli_args, "install", *installPkg)
+	lib.Logger.Debug(cli_args, "uninstall", *uninstall)
+	lib.Logger.Debug(cli_args, "only-uninstall", *onlyUninstall)
+	lib.Logger.Debug(cli_args, "pkgs", *pkgs)
 	lib.Logger.Debug(cli_args, "sourcedir", *sourcedir)
 	lib.Logger.Debug(cli_args, "targetdir", *targetdir)
 
@@ -60,10 +70,10 @@ func main() {
 	*lockfile = lib.DefaultLockfile
 
 	if *dev {
-		lib.Logger.Debug("setting mode to dev", "dev should be", lib.Dev)
+		lib.Logger.Debug("setting mode to dev")
 		lockfile.Mode = lib.Dev
 	} else {
-		lib.Logger.Debug("setting mode to cpy", "cpy should be", lib.Cpy)
+		lib.Logger.Debug("setting mode to cpy")
 		lockfile.Mode = lib.Cpy
 	}
 
