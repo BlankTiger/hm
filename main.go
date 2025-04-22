@@ -11,14 +11,14 @@ import (
 var homeDir = os.Getenv("HOME")
 
 func main() {
-	dev := flag.Bool("dev", false, "symlinks the config files, so that changes are instant")
+	copy := flag.Bool("copy", false, "copies the config files instead of symlinking them")
 	debug := flag.Bool("dbg", false, "set logging level to debug")
 
 	install := flag.Bool("install", false, "whether to install packages using INSTALL instructions found in config folders")
-	onlyInstall := flag.Bool("only-install", false, "doesnt copy configs over, only installs the packages that would be copied over based on their INSTALL instructions")
+	onlyInstall := flag.Bool("only-install", false, "doesnt copy configs over, only installs the packages that would be copied over based on their INSTALL instructions, --install can be omitted if this option is used")
 
 	uninstall := flag.Bool("uninstall", false, "whether to uninstall packages using INSTALL instructions found in config folders")
-	onlyUninstall := flag.Bool("only-uninstall", false, "doesnt copy configs over, only uninstalls the packages for configs that would be removed based on their instructions")
+	onlyUninstall := flag.Bool("only-uninstall", false, "doesnt copy configs over, only uninstalls the packages for configs that would be removed based on their instructions, --uninstall can be omitted if this option is used")
 
 	pkgs := flag.String("pkgs", "", "installs/uninstalls only the packages specified by this argument, empty means work on all active, non-hidden configs")
 
@@ -34,7 +34,7 @@ func main() {
 		lib.Level = slog.LevelDebug
 	}
 	cli_args := "cli args"
-	lib.Logger.Debug(cli_args, "dev", *dev)
+	lib.Logger.Debug(cli_args, "copy", *copy)
 	lib.Logger.Debug(cli_args, "dbg", *debug)
 	lib.Logger.Debug(cli_args, "install", *install)
 	lib.Logger.Debug(cli_args, "only-install", *onlyInstall)
@@ -69,12 +69,12 @@ func main() {
 	// TODO: think if this is correct, for now just reset
 	*lockfile = lib.DefaultLockfile
 
-	if *dev {
-		lib.Logger.Debug("setting mode to dev")
-		lockfile.Mode = lib.Dev
-	} else {
+	if *copy {
 		lib.Logger.Debug("setting mode to cpy")
 		lockfile.Mode = lib.Cpy
+	} else {
+		lib.Logger.Debug("setting mode to dev")
+		lockfile.Mode = lib.Dev
 	}
 
 	for _, e := range entries {
@@ -107,24 +107,44 @@ func main() {
 			return
 		}
 
-		if *dev {
-			lib.Logger.Info("symlinking", "from", from, "to", to)
-			err := lib.Symlink(from, to)
-			if err != nil {
-				lib.Logger.Error("couldn't symlink", "err", err)
-				return
-			}
-		} else {
-			lib.Logger.Info("copying", "from", from, "to", to)
-			err := lib.Copy(from, to)
-			if err != nil {
-				lib.Logger.Error("couldn't copy", "err", err)
-				return
-			}
-		}
-
 		config := lib.NewConfig(name, from, to, requirements)
 		lockfile.AddConfig(config)
+	}
+
+	if !*onlyUninstall {
+		for idx, cfg := range lockfile.Configs {
+			if *install || *onlyInstall {
+				if *pkgs != "" {
+				}
+			}
+
+			if *onlyInstall {
+				continue
+			}
+
+			if *copy {
+				lib.Logger.Info("copying", "from", cfg.From, "to", cfg.To)
+				err := lib.Copy(cfg.From, cfg.To)
+				if err != nil {
+					lib.Logger.Error("couldn't copy", "err", err)
+					return
+				}
+			} else {
+				lib.Logger.Info("symlinking", "from", cfg.From, "to", cfg.To)
+				err := lib.Symlink(cfg.From, cfg.To)
+				if err != nil {
+					lib.Logger.Error("couldn't symlink", "err", err)
+					return
+				}
+			}
+		}
+	}
+
+	if *uninstall || *onlyUninstall {
+		for idx, cfg := range lockfile.SkippedConfigs {
+			if *pkgs != "" {
+			}
+		}
 	}
 
 	lockDiff := lockfileBefore.Diff(lockfile)
