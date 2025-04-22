@@ -54,8 +54,13 @@ type config struct {
 }
 
 type installInfo struct {
-	IsInstalled      bool   `json:"isInstalled"`
-	InstallationTime string `json:"installationTime"`
+	IsInstalled             bool   `json:"isInstalled"`
+	InstallationTime        string `json:"installationTime"`
+	InstallationInstruction string `json:"installationInstruction"`
+
+	WasUninstalled           bool   `json:"wasUninstalled"`
+	UninstallationTime       string `json:"uninstallationTime"`
+	UinstallationInstruction string `json:"uinstallationInstruction"`
 }
 
 func NewConfig(name, from, to string, reqs *requirements) config {
