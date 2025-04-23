@@ -36,7 +36,7 @@ has to depend on the lockfile (we have to store information on how the package w
 - uninstalling should probably happen when an option is passed to uninstall every package that is ignored
   and previously wasn't ignored based on the lockfile
 - option to copy over changes to configs that were done after deploying them with `copy` mode back to the configuration store
-
+- make the installation/uninstallation process run in a coroutine to not block just copying the configs over
 
 
 # `INSTALL` format
