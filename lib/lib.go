@@ -50,11 +50,15 @@ func ParseRequirements(path string) (res *requirements, err error) {
 	return res, err
 }
 
-func ExecuteInstall(info requirements) error {
-	return nil
+func Install(cfg config) (res *installInfo, err error) {
+	res, err = &cfg.InstallInfo, nil
+	return res, err
 }
 
-// func ExecuteUninstall(info Program) error {}
+func Uninstall(cfg config) (res *installInfo, err error) {
+	res, err = &cfg.InstallInfo, nil
+	return res, err
+}
 
 func assert(condition bool, message string) {
 	if !condition {
