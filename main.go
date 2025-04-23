@@ -6,6 +6,8 @@ import (
 	"flag"
 	"log/slog"
 	"os"
+	"slices"
+	"strings"
 )
 
 var homeDir = os.Getenv("HOME")
@@ -20,7 +22,7 @@ func main() {
 	uninstall := flag.Bool("uninstall", false, "whether to uninstall packages using INSTALL instructions found in config folders")
 	onlyUninstall := flag.Bool("only-uninstall", false, "doesnt copy configs over, only uninstalls the packages for configs that would be removed based on their instructions, --uninstall can be omitted if this option is used")
 
-	pkgs := flag.String("pkgs", "", "installs/uninstalls only the packages specified by this argument, empty means work on all active, non-hidden configs")
+	pkgsTxt := flag.String("pkgs", "", "installs/uninstalls only the packages specified by this argument, empty means work on all active, non-hidden configs, example: --pkgs fish,ghostty")
 
 	sourcedir := flag.String("sourcedir", homeDir+"/.config/homecfg", "source of configuration files, without the trailing /")
 	// TODO: UNCOMMENT AFTER FINISHING TESTING
@@ -40,7 +42,7 @@ func main() {
 	lib.Logger.Debug(cli_args, "only-install", *onlyInstall)
 	lib.Logger.Debug(cli_args, "uninstall", *uninstall)
 	lib.Logger.Debug(cli_args, "only-uninstall", *onlyUninstall)
-	lib.Logger.Debug(cli_args, "pkgs", *pkgs)
+	lib.Logger.Debug(cli_args, "pkgs", *pkgsTxt)
 	lib.Logger.Debug(cli_args, "sourcedir", *sourcedir)
 	lib.Logger.Debug(cli_args, "targetdir", *targetdir)
 
@@ -111,14 +113,19 @@ func main() {
 		lockfile.AddConfig(config)
 	}
 
+	pkgs := strings.Split(*pkgsTxt, ",")
+
 	if !*onlyUninstall {
 		for idx, cfg := range lockfile.Configs {
 			if *install || *onlyInstall {
-				if *pkgs != "" {
+				if len(pkgs) > 0 && !slices.Contains(pkgs, cfg.Name) {
+					lib.Logger.Debug("skipping config for installation, because it wasnt in the provided list", "skipped", cfg.Name)
+					continue
 				}
 			}
 
 			if *onlyInstall {
+				lib.Logger.Debug("skipping copying/symlinking the config, because --only-install was passed", "skipped", cfg.Name)
 				continue
 			}
 
@@ -142,7 +149,9 @@ func main() {
 
 	if *uninstall || *onlyUninstall {
 		for idx, cfg := range lockfile.SkippedConfigs {
-			if *pkgs != "" {
+			if len(pkgs) > 0 && !slices.Contains(pkgs, cfg.Name) {
+				lib.Logger.Debug("skipping config for uninstallation, because it wasnt in the provided list", "skipped", cfg.Name)
+				continue
 			}
 		}
 	}
