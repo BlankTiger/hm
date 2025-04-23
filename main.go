@@ -122,6 +122,13 @@ func main() {
 					lib.Logger.Debug("skipping config for installation, because it wasnt in the provided list", "skipped", cfg.Name)
 					continue
 				}
+
+				info, err := lib.Install(cfg)
+				if err != nil {
+					lib.Logger.Error("something went wrong while trying to install using the INSTALL instructions", "pkg", cfg.Name, "err", err)
+					continue
+				}
+				lockfile.Configs[idx].InstallInfo = *info
 			}
 
 			if *onlyInstall {
@@ -145,6 +152,8 @@ func main() {
 				}
 			}
 		}
+	} else {
+		lib.Logger.Info("skipping copying/symlinking the config, because --only-uninstall was passed")
 	}
 
 	if *uninstall || *onlyUninstall {
@@ -153,6 +162,13 @@ func main() {
 				lib.Logger.Debug("skipping config for uninstallation, because it wasnt in the provided list", "skipped", cfg.Name)
 				continue
 			}
+
+			info, err := lib.Uninstall(cfg)
+			if err != nil {
+				lib.Logger.Error("something went wrong while trying to uninstall using the instructions", "pkg", cfg.Name, "err", err)
+				continue
+			}
+			lockfile.Configs[idx].InstallInfo = *info
 		}
 	}
 
