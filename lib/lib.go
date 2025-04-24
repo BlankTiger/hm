@@ -25,7 +25,7 @@ func ParseRequirements(path string) (res *requirements, err error) {
 	res = &requirements{}
 	{
 		Logger.Debug("parsing installation instructions")
-		installationInstructions, err := parseInstallationInstructions(path)
+		installationInstructions, err := parseInstallInstructions(path)
 		if err != nil {
 			return nil, err
 		}

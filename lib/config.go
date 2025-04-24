@@ -12,21 +12,22 @@ type config struct {
 	From         string       `json:"from"`
 	To           string       `json:"to"`
 	Requirements requirements `json:"requirements"`
-	InstallInfo  installInfo  `json:"installationInfo"`
+	InstallInfo  installInfo  `json:"installInfo"`
 }
 
 type installInfo struct {
-	IsInstalled             bool   `json:"isInstalled"`
-	InstallationTime        string `json:"installationTime"`
-	InstallationInstruction string `json:"installationInstruction"`
+	IsInstalled        bool   `json:"isInstalled"`
+	InstallTime        string `json:"installTime"`
+	InstallInstruction string `json:"installInstruction"`
 
-	WasUninstalled           bool   `json:"wasUninstalled"`
-	UninstallationTime       string `json:"uninstallationTime"`
-	UinstallationInstruction string `json:"uinstallationInstruction"`
+	WasUninstalled      bool   `json:"wasUninstalled"`
+	UninstallTime       string `json:"uninstallTime"`
+	UinstallInstruction string `json:"uinstallInstruction"`
 }
 
 func NewConfig(name, from, to string, reqs *requirements) config {
-	usedReqs := &requirements{}
+	newReqs := newRequirements()
+	usedReqs := &newReqs
 	if reqs != nil {
 		usedReqs = reqs
 	}
@@ -52,18 +53,34 @@ func ContainsConfig(configs []config, c config) bool {
 }
 
 type requirements struct {
-	Name         string                     `json:"name"`
-	Install      installationInstruction    `json:"installationInstructions"`
-	Uninstall    uninstallationInstructions `json:"uninstallInstructions"`
-	Dependencies []installationInstruction  `json:"dependencies"`
+	Name         string               `json:"name"`
+	Install      installInstruction   `json:"installInstructions"`
+	Uninstall    uninstallInstruction `json:"uninstallInstructions"`
+	Dependencies []installInstruction `json:"dependencies"`
 }
 
-type installationInstruction struct {
-	Method installationMethod `json:"method"`
-	Pkg    string             `json:"pkg"`
+func newRequirements() requirements {
+	return requirements{
+		Name:         "",
+		Install:      newInstallInstruction(),
+		Uninstall:    newUninstallInstruction(),
+		Dependencies: []installInstruction{},
+	}
 }
 
-type installationMethod string
+type installInstruction struct {
+	Method installMethod `json:"method"`
+	Pkg    string        `json:"pkg"`
+}
+
+func newInstallInstruction() installInstruction {
+	return installInstruction{
+		Method: system,
+		Pkg:    "",
+	}
+}
+
+type installMethod string
 
 const (
 	apt    = "apt"
@@ -85,11 +102,15 @@ func isValidInstallationMethod(method string) bool {
 // TODO:
 // func uninstallationMethodBasedOnInstallationMethod(instMethod installationMethod) UninstallationInstructions
 
-// TODO: think what this should include
-type uninstallationInstructions struct{}
+// TODO: think what this should include, for now just type alias to installInstruction
+type uninstallInstruction installInstruction
 
-func parseInstallationInstructions(path string) (res *installationInstruction, err error) {
-	res = &installationInstruction{}
+func newUninstallInstruction() uninstallInstruction {
+	return uninstallInstruction(newInstallInstruction())
+}
+
+func parseInstallInstructions(path string) (res *installInstruction, err error) {
+	res = &installInstruction{}
 	file, err := os.Open(path + INSTALL_PATH_POSTFIX)
 	if err != nil {
 		// NOTE: file not existing is not an error in this case (can have config
@@ -108,7 +129,7 @@ func parseInstallationInstructions(path string) (res *installationInstruction, e
 		}
 
 		txt := string(txtBytes)
-		res, err = parseSingleInstallationInstruction(txt)
+		res, err = parseInstallInstruction(txt)
 		if err != nil {
 			return nil, err
 		}
@@ -117,8 +138,9 @@ func parseInstallationInstructions(path string) (res *installationInstruction, e
 	return res, nil
 }
 
-func parseSingleInstallationInstruction(inst string) (res *installationInstruction, err error) {
-	res = &installationInstruction{}
+func parseInstallInstruction(inst string) (res *installInstruction, err error) {
+	newII := newInstallInstruction()
+	res = &newII
 
 	{
 		linesCount := strings.Count(inst, "\n")
@@ -130,7 +152,7 @@ func parseSingleInstallationInstruction(inst string) (res *installationInstructi
 		method := parts[0]
 		errMsg := fmt.Sprintf("must be an implemented, valid installation method, instead got: '%s'", method)
 		assert(isValidInstallationMethod(method), errMsg)
-		res.Method = installationMethod(method)
+		res.Method = installMethod(method)
 	}
 
 	{
@@ -140,13 +162,13 @@ func parseSingleInstallationInstruction(inst string) (res *installationInstructi
 	return res, nil
 }
 
-func parseUinstallationInstructions(path string) (res *uninstallationInstructions, err error) {
+func parseUinstallationInstructions(path string) (res *uninstallInstruction, err error) {
 	panic("unimplemented")
 	// return res, err
 }
 
-func parseDependencies(path string) (res []installationInstruction, err error) {
-	res = []installationInstruction{}
+func parseDependencies(path string) (res []installInstruction, err error) {
+	res = []installInstruction{}
 	file, err := os.Open(path + DEPENDENCIES_PATH_POSTFIX)
 	if err != nil {
 		// NOTE: file not existing is not an error in this case (can have
@@ -168,7 +190,7 @@ func parseDependencies(path string) (res []installationInstruction, err error) {
 		if line == "" {
 			continue
 		}
-		instructions, err := parseSingleInstallationInstruction(line)
+		instructions, err := parseInstallInstruction(line)
 		if err != nil {
 			return nil, err
 		}
