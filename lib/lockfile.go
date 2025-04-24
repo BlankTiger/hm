@@ -24,7 +24,7 @@ func (l *lockfile) AppendSkippedConfig(config config) {
 	l.SkippedConfigs = append(l.SkippedConfigs, config)
 }
 
-func NewLockfile() lockfile {
+func newLockfile() lockfile {
 	return lockfile{
 		Version:        "0.1.0",
 		Configs:        []config{},
@@ -32,9 +32,9 @@ func NewLockfile() lockfile {
 	}
 }
 
-var DefaultLockfile = NewLockfile()
+var DefaultLockfile = newLockfile()
 
-type LockfileDiff struct {
+type lockfileDiff struct {
 	AddedConfigs             []config `json:"addedConfigs"`
 	RemovedConfigs           []config `json:"removedConfigs"`
 	NewlySkippedConfigs      []config `json:"newlySkippedConfigs"`
@@ -43,8 +43,26 @@ type LockfileDiff struct {
 	VersionChanged           bool     `json:"versionChanged"`
 }
 
+func (d *lockfileDiff) Save(path string) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	toWrite, err := json.Marshal(d)
+	if err != nil {
+		return err
+	}
+	written, err := file.Write(toWrite)
+	if err != nil {
+		return err
+	}
+	assert(written == len(toWrite), "must write what is given")
+	return nil
+}
+
 // method should be called on an old version of the lockfile
-func (l *lockfile) Diff(newLockfile *lockfile) LockfileDiff {
+func (l *lockfile) Diff(newLockfile *lockfile) lockfileDiff {
 	addedConfigs := []config{}
 	removedConfigs := []config{}
 	newlySkippedConfigs := []config{}
@@ -74,7 +92,7 @@ func (l *lockfile) Diff(newLockfile *lockfile) LockfileDiff {
 		}
 	}
 
-	return LockfileDiff{
+	return lockfileDiff{
 		AddedConfigs:             addedConfigs,
 		RemovedConfigs:           removedConfigs,
 		NewlySkippedConfigs:      newlySkippedConfigs,
