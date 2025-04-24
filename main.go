@@ -14,6 +14,7 @@ var homeDir = os.Getenv("HOME")
 func main() {
 	copyMode := flag.Bool("copy", false, "copies the config files instead of symlinking them")
 	debug := flag.Bool("dbg", false, "set logging level to debug")
+	saveLockDiff := flag.Bool("save-diff", false, "wheter to save lockfile diff from before and after to a file regardless of the --debug flag")
 
 	install := flag.Bool("install", false, "whether to install packages using INSTALL instructions found in config folders")
 	onlyInstall := flag.Bool("only-install", false, "doesnt copy configs over, only installs the packages that would be copied over based on their INSTALL instructions, --install can be omitted if this option is used")
@@ -30,6 +31,7 @@ func main() {
 	targetdir := flag.String("targetdir", targetDirDefault, "target for symlinks for debugging, without the trailing /")
 	flag.Parse()
 
+	defaultIndent := "  "
 	if *debug {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 		lib.Level = slog.LevelDebug
@@ -37,6 +39,7 @@ func main() {
 	cli_args := "cli args"
 	lib.Logger.Debug(cli_args, "copy", *copyMode)
 	lib.Logger.Debug(cli_args, "dbg", *debug)
+	lib.Logger.Debug(cli_args, "saveLockDiff", *saveLockDiff)
 	lib.Logger.Debug(cli_args, "install", *install)
 	lib.Logger.Debug(cli_args, "only-install", *onlyInstall)
 	lib.Logger.Debug(cli_args, "uninstall", *uninstall)
@@ -61,7 +64,7 @@ func main() {
 	}
 	lockfileBefore := *lockfile
 	defer func() {
-		err := lockfile.Save(lockfilePath)
+		err := lockfile.Save(lockfilePath, defaultIndent)
 		if err != nil {
 			lib.Logger.Error("something went wrong while trying to save the lockfile", "err", err)
 			return
@@ -174,8 +177,8 @@ func main() {
 
 	lockDiff := lockfileBefore.Diff(lockfile)
 	{
-		if *debug {
-			err := lockDiff.Save(lockfileDiffPath)
+		if *debug || *saveLockDiff {
+			err := lockDiff.Save(lockfileDiffPath, defaultIndent)
 			if err != nil {
 				lib.Logger.Error("something went wrong while trying to save lockfile diff to a file", "err", err)
 				return

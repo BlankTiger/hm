@@ -43,13 +43,19 @@ type lockfileDiff struct {
 	VersionChanged           bool     `json:"versionChanged"`
 }
 
-func (d *lockfileDiff) Save(path string) error {
+func (d *lockfileDiff) Save(path, indent string) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	toWrite, err := json.Marshal(d)
+	var toWrite []byte
+
+	if indent == "" {
+		toWrite, err = json.Marshal(d)
+	} else {
+		toWrite, err = json.MarshalIndent(d, "", indent)
+	}
 	if err != nil {
 		return err
 	}
@@ -111,7 +117,7 @@ func ReadOrCreateLockfile(path string) (*lockfile, error) {
 				return nil, err
 			}
 			defer f.Close()
-			defaultLockfileBytes, _ := DefaultLockfile.Marshal()
+			defaultLockfileBytes, _ := json.Marshal(DefaultLockfile)
 			written, err := f.Write(defaultLockfileBytes)
 			if err != nil {
 				return nil, err
@@ -129,13 +135,19 @@ func ReadOrCreateLockfile(path string) (*lockfile, error) {
 	return parseLockfile(txt)
 }
 
-func (l *lockfile) Save(path string) error {
+func (l *lockfile) Save(path, indent string) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	toWrite, err := l.Marshal()
+
+	var toWrite []byte
+	if indent == "" {
+		toWrite, err = json.Marshal(l)
+	} else {
+		toWrite, err = json.MarshalIndent(l, "", indent)
+	}
 	if err != nil {
 		return err
 	}
@@ -158,8 +170,4 @@ func parseLockfile(txt []byte) (*lockfile, error) {
 		return nil, err
 	}
 	return &lockfile, nil
-}
-
-func (l *lockfile) Marshal() ([]byte, error) {
-	return json.Marshal(*l)
 }
