@@ -56,7 +56,7 @@ func ContainsConfig(configs []config, c config) bool {
 
 type requirements struct {
 	Name         string               `json:"name"`
-	Install      installInstruction   `json:"installInstructions"`
+	Install      *installInstruction  `json:"installInstructions"`
 	Uninstall    uninstallInstruction `json:"uninstallInstructions"`
 	Dependencies []installInstruction `json:"dependencies"`
 }
@@ -64,7 +64,7 @@ type requirements struct {
 func newRequirements() requirements {
 	return requirements{
 		Name:         "",
-		Install:      newInstallInstruction(),
+		Install:      nil,
 		Uninstall:    newUninstallInstruction(),
 		Dependencies: []installInstruction{},
 	}
@@ -122,7 +122,7 @@ func parseInstallInstructions(path string) (res *installInstruction, err error) 
 		// NOTE: file not existing is not an error in this case (can have config
 		// files without installation instructions obviously)
 		if os.IsNotExist(err) {
-			return res, nil
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -168,7 +168,7 @@ func parseInstallInstruction(inst string) (res *installInstruction, err error) {
 	return res, nil
 }
 
-func parseUinstallationInstructions(path string) (res *uninstallInstruction, err error) {
+func parseUinstallInstructions(path string) (res *uninstallInstruction, err error) {
 	panic("unimplemented")
 	// return res, err
 }

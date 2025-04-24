@@ -31,7 +31,9 @@ func ParseRequirements(path string) (res *requirements, err error) {
 		if err != nil {
 			return nil, err
 		}
-		res.Install = *installationInstructions
+		if installationInstructions != nil {
+			res.Install = installationInstructions
+		}
 	}
 
 	{
@@ -55,6 +57,11 @@ func ParseRequirements(path string) (res *requirements, err error) {
 func Install(cfg config) (res *installInfo, err error) {
 	res, err = &cfg.InstallInfo, nil
 
+	if cfg.Requirements.Install == nil {
+		Logger.Debug("not installing the pkg, because there was no INSTALL instructions", "pkg", cfg.Name)
+		return res, nil
+	}
+
 	// first install the dependencies if any
 	{
 		for _, depInst := range cfg.Requirements.Dependencies {
@@ -67,7 +74,7 @@ func Install(cfg config) (res *installInfo, err error) {
 	}
 
 	{
-		cmd, err := install(cfg.Requirements.Install)
+		cmd, err := install(*cfg.Requirements.Install)
 		if err != nil {
 			return res, err
 		}
