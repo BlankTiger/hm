@@ -2,10 +2,12 @@ package lib
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type Mode int
@@ -52,7 +54,48 @@ func ParseRequirements(path string) (res *requirements, err error) {
 
 func Install(cfg config) (res *installInfo, err error) {
 	res, err = &cfg.InstallInfo, nil
+
+	// first install the dependencies if any
+	{
+		for _, depInst := range cfg.Requirements.Dependencies {
+			_, err := install(depInst)
+			if err != nil {
+				return res, err
+			}
+		}
+		res.DependenciesInstalled = true
+	}
+
+	{
+		cmd, err := install(cfg.Requirements.Install)
+		if err != nil {
+			return res, err
+		}
+		res.InstallInstruction = cmd
+	}
+
+	{
+		now := time.Now().UTC().Format(time.DateTime)
+		res.InstallTime = now
+	}
+	res.IsInstalled = true
 	return res, err
+}
+
+func install(inst installInstruction) (string, error) {
+	// NOTE: this means that install instructions for this program dont exist or are inverifiably invalid at this point
+	if inst.Method.isEmpty() {
+		return "", nil
+	}
+
+	Logger.Info("going to install a pkg", "method", inst.Method, "pkg", inst.Pkg)
+	switch inst.Method {
+	case cargo:
+		Logger.Info("FOUND THE RUST USER GOTTEM")
+	default:
+		return "", errors.New(fmt.Sprintf("this installation method is either not implemented, or is invalid, method='%s'", inst.Method))
+	}
+	return "", nil
 }
 
 func Uninstall(cfg config) (res *installInfo, err error) {
