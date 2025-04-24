@@ -89,20 +89,46 @@ func Install(cfg config) (res *installInfo, err error) {
 	return res, err
 }
 
-func install(inst installInstruction) (string, error) {
-	// NOTE: this means that install instructions for this program dont exist or are inverifiably invalid at this point
-	if inst.Method.isEmpty() {
-		return "", nil
-	}
+func install(inst installInstruction) (res string, err error) {
+	assert(!inst.Method.isEmpty(), fmt.Sprintf("at this point we should always have valid installation instructions, got: '%v'", inst))
+
+	res, err = "", nil
 
 	Logger.Info("going to install a pkg", "method", inst.Method, "pkg", inst.Pkg)
 	switch inst.Method {
 	case cargo:
-		Logger.Info("FOUND THE RUST USER GOTTEM")
+		err = installWithCargo(inst.Pkg)
+	case system:
+		err = installWithSystem(inst.Pkg)
+	case pacman:
+		err = installWithPacman(inst.Pkg)
 	default:
 		return "", errors.New(fmt.Sprintf("this installation method is either not implemented, or is invalid, method='%s'", inst.Method))
 	}
-	return "", nil
+	return res, err
+}
+
+func installWithCargo(pkg string) error {
+	panic("not implemented yet")
+	cmd := "cargo install " + pkg
+	return nil
+}
+
+func installWithPacman(pkg string) error {
+	panic("not implemented yet")
+	cmd := "pacman -Syy " + pkg
+	return nil
+}
+
+func installWithSystem(pkg string) error {
+	panic("not implemented yet")
+	cmd, err := genSystemInstallCmd(pkg)
+	return err
+}
+
+func genSystemInstallCmd(pkg string) (string, error) {
+	panic("not implemented yet")
+	return cmd, nil
 }
 
 func Uninstall(cfg config) (res *installInfo, err error) {
