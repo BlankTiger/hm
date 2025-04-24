@@ -16,9 +16,11 @@ type config struct {
 }
 
 type installInfo struct {
-	IsInstalled        bool   `json:"isInstalled"`
-	InstallTime        string `json:"installTime"`
-	InstallInstruction string `json:"installInstruction"`
+	IsInstalled bool   `json:"isInstalled"`
+	InstallTime string `json:"installTime"`
+	// TODO: maybe this is not the right name, maybe should be called InstallCommand?
+	InstallInstruction    string `json:"installInstruction"`
+	DependenciesInstalled bool   `json:"dependenciesInstalled"`
 
 	WasUninstalled      bool   `json:"wasUninstalled"`
 	UninstallTime       string `json:"uninstallTime"`
