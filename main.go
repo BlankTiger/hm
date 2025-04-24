@@ -31,7 +31,7 @@ func main() {
 	targetdir := flag.String("targetdir", targetDirDefault, "target for symlinks for debugging, without the trailing /")
 	flag.Parse()
 
-	defaultIndent := "  "
+	defaultIndent := "    "
 	if *debug {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 		lib.Level = slog.LevelDebug
