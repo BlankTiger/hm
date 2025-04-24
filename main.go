@@ -116,7 +116,10 @@ func main() {
 		lockfile.AddConfig(config)
 	}
 
-	pkgs := strings.Split(*pkgsTxt, ",")
+	pkgs := make([]string, 0)
+	if *pkgsTxt != "" {
+		pkgs = strings.Split(*pkgsTxt, ",")
+	}
 
 	if !*onlyUninstall {
 		for idx, cfg := range lockfile.Configs {
