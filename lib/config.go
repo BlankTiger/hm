@@ -92,6 +92,10 @@ const (
 	bash   = "bash"
 )
 
+func (i *installMethod) isEmpty() bool {
+	return string(*i) == ""
+}
+
 func isValidInstallationMethod(method string) bool {
 	switch method {
 	case apt, pacman, cargo, system, bash:
