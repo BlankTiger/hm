@@ -55,17 +55,17 @@ func ContainsConfig(configs []config, c config) bool {
 }
 
 type requirements struct {
-	Name         string               `json:"name"`
-	Install      *installInstruction  `json:"installInstructions"`
-	Uninstall    uninstallInstruction `json:"uninstallInstructions"`
-	Dependencies []installInstruction `json:"dependencies"`
+	Name         string                `json:"name"`
+	Install      *installInstruction   `json:"installInstructions"`
+	Uninstall    *uninstallInstruction `json:"uninstallInstructions"`
+	Dependencies []installInstruction  `json:"dependencies"`
 }
 
 func newRequirements() requirements {
 	return requirements{
 		Name:         "",
 		Install:      nil,
-		Uninstall:    newUninstallInstruction(),
+		Uninstall:    nil,
 		Dependencies: []installInstruction{},
 	}
 }
