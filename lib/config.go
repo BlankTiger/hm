@@ -158,14 +158,14 @@ func parseInstallInstruction(inst string) (res *installInstruction, err error) {
 
 	{
 		linesCount := strings.Count(inst, "\n")
-		assert(linesCount <= 1, "think on how to handle multiple installation instructions if we want them in the future")
+		Assert(linesCount <= 1, "think on how to handle multiple installation instructions if we want them in the future")
 	}
 
 	parts := strings.Split(inst, ":")
 	{
 		method := parts[0]
 		errMsg := fmt.Sprintf("must be an implemented, valid installation method, instead got: '%s'", method)
-		assert(isValidInstallationMethod(method), errMsg)
+		Assert(isValidInstallationMethod(method), errMsg)
 		res.Method = installMethod(method)
 	}
 

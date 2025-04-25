@@ -63,7 +63,7 @@ func (d *lockfileDiff) Save(path, indent string) error {
 	if err != nil {
 		return err
 	}
-	assert(written == len(toWrite), "must write what is given")
+	Assert(written == len(toWrite), "must write what is given")
 	return nil
 }
 
@@ -122,7 +122,7 @@ func ReadOrCreateLockfile(path string) (*lockfile, error) {
 			if err != nil {
 				return nil, err
 			}
-			assert(written == len(defaultLockfileBytes), "must write what is given")
+			Assert(written == len(defaultLockfileBytes), "must write what is given")
 			return &DefaultLockfile, nil
 		}
 		return nil, err
@@ -155,7 +155,7 @@ func (l *lockfile) Save(path, indent string) error {
 	if err != nil {
 		return err
 	}
-	assert(written == len(toWrite), "must write what is given")
+	Assert(written == len(toWrite), "must write what is given")
 	return nil
 }
 

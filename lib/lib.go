@@ -92,7 +92,7 @@ func Install(cfg config) (res *installInfo, err error) {
 }
 
 func install(inst installInstruction) (cmd string, err error) {
-	assert(!inst.Method.isEmpty(), fmt.Sprintf("at this point we should always have valid installation instructions, got: '%v'", inst))
+	Assert(!inst.Method.isEmpty(), fmt.Sprintf("at this point we should always have valid installation instructions, got: '%v'", inst))
 
 	cmd, err = "", nil
 
@@ -178,7 +178,7 @@ func Uninstall(cfg config) (res *installInfo, err error) {
 	return res, err
 }
 
-func assert(condition bool, message string) {
+func Assert(condition bool, message string) {
 	if !condition {
 		panic(message)
 	}
