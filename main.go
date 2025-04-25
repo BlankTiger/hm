@@ -148,6 +148,8 @@ func main() {
 		lib.Logger.Info("skipping copying/symlinking the config, because --only-install or --only-uninstall was passed")
 	}
 
+	// TODO: preserve information on what was already installed
+	// TODO: probably should skip installing stuff that was already installed and add an option to force an upgrade
 	if *install || *onlyInstall {
 		for idx, cfg := range lockfile.Configs {
 			if len(pkgs) > 0 && !slices.Contains(pkgs, cfg.Name) {
