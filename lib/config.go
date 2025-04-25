@@ -148,6 +148,12 @@ func parseInstallInstruction(inst string) (res *installInstruction, err error) {
 	newII := newInstallInstruction()
 	res = &newII
 
+	// TODO: fix the skip install instruction/commenting install instructions
+	if inst[0:2] == "//" {
+		Logger.Debug("skipping install instructions, because they are commented out", "instruction", inst)
+		return nil, nil
+	}
+
 	{
 		linesCount := strings.Count(inst, "\n")
 		assert(linesCount <= 1, "think on how to handle multiple installation instructions if we want them in the future")
@@ -199,6 +205,9 @@ func parseDependencies(path string) (res []installInstruction, err error) {
 		instructions, err := parseInstallInstruction(line)
 		if err != nil {
 			return nil, err
+		}
+		if instructions == nil {
+			continue
 		}
 		res = append(res, *instructions)
 	}
