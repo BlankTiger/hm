@@ -122,27 +122,8 @@ func main() {
 		pkgs = strings.Split(*pkgsTxt, ",")
 	}
 
-	if !*onlyUninstall {
-		for idx, cfg := range lockfile.Configs {
-			if *install || *onlyInstall {
-				if len(pkgs) > 0 && !slices.Contains(pkgs, cfg.Name) {
-					lib.Logger.Debug("skipping config for installation, because it wasnt in the provided list", "skipped", cfg.Name)
-					continue
-				}
-
-				info, err := lib.Install(cfg)
-				if err != nil {
-					lib.Logger.Error("something went wrong while trying to install using the INSTALL instructions", "pkg", cfg.Name, "err", err)
-					continue
-				}
-				lockfile.Configs[idx].InstallInfo = *info
-			}
-
-			if *onlyInstall {
-				lib.Logger.Debug("skipping copying/symlinking the config, because --only-install was passed", "skipped", cfg.Name)
-				continue
-			}
-
+	if !*onlyUninstall && !*onlyInstall {
+		for _, cfg := range lockfile.Configs {
 			if *copyMode {
 				lib.Logger.Info("copying", "from", cfg.From, "to", cfg.To)
 				err := lib.Copy(cfg.From, cfg.To)
@@ -160,7 +141,23 @@ func main() {
 			}
 		}
 	} else {
-		lib.Logger.Info("skipping copying/symlinking the config, because --only-uninstall was passed")
+		lib.Logger.Info("skipping copying/symlinking the config, because --only-install or --only-uninstall was passed")
+	}
+
+	if *install || *onlyInstall {
+		for idx, cfg := range lockfile.Configs {
+			if len(pkgs) > 0 && !slices.Contains(pkgs, cfg.Name) {
+				lib.Logger.Debug("skipping config for installation, because it wasnt in the provided list", "skipped", cfg.Name)
+				continue
+			}
+
+			info, err := lib.Install(cfg)
+			if err != nil {
+				lib.Logger.Error("something went wrong while trying to install using the INSTALL instructions", "pkg", cfg.Name, "err", err)
+				continue
+			}
+			lockfile.Configs[idx].InstallInfo = *info
+		}
 	}
 
 	if *uninstall || *onlyUninstall {
