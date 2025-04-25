@@ -38,6 +38,8 @@ has to depend on the lockfile (we have to store information on how the package w
 - option to copy over changes to configs that were done after deploying them with `copy` mode back to the configuration store
 - make the installation/uninstallation process run in a coroutine to not block just copying the configs over
 - think if it makes sense to store information on newly/previously skipped configs, cause conceptually this might overlap heavily (or entirely) with the added/removed configs
+- would be nice to have a file in the root config directory that would just have installation instructions, that way user could put all programs that would otherwise have to be inserted as dependencies in individual config program installation requirements
+- would be nice to calculate installation dependency graph such that everything always gets installed in the correct order
 
 
 # `INSTALL` format
