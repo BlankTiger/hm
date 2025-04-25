@@ -85,11 +85,13 @@ func newInstallInstruction() installInstruction {
 type installMethod string
 
 const (
-	apt    = "apt"
-	pacman = "pacman"
-	cargo  = "cargo"
-	system = "system"
-	bash   = "bash"
+	apt           = "apt"
+	pacman        = "pacman"
+	aur           = "aur"
+	cargo         = "cargo"
+	cargoBinstall = "cargo-binstall"
+	system        = "system"
+	bash          = "bash"
 )
 
 func (i *installMethod) isEmpty() bool {
@@ -98,7 +100,7 @@ func (i *installMethod) isEmpty() bool {
 
 func isValidInstallationMethod(method string) bool {
 	switch method {
-	case apt, pacman, cargo, system, bash:
+	case apt, pacman, aur, cargo, system, bash, cargoBinstall:
 		return true
 	default:
 		return false
