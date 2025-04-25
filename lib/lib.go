@@ -159,6 +159,7 @@ func execute(cmd string) error {
 		execCmd.Stderr = os.Stderr
 		execCmd.Stdin = os.Stdin
 		execCmd.Stdout = os.Stdout
+		// BUG: if user does C-c here, then stdin/stdout/stderr might not get released
 		err := execCmd.Start()
 		if err != nil {
 			return nil
