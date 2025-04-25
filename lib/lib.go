@@ -89,45 +89,47 @@ func Install(cfg config) (res *installInfo, err error) {
 	return res, err
 }
 
-func install(inst installInstruction) (res string, err error) {
+func install(inst installInstruction) (cmd string, err error) {
 	assert(!inst.Method.isEmpty(), fmt.Sprintf("at this point we should always have valid installation instructions, got: '%v'", inst))
 
-	res, err = "", nil
+	cmd, err = "", nil
 
 	Logger.Info("going to install a pkg", "method", inst.Method, "pkg", inst.Pkg)
 	switch inst.Method {
 	case cargo:
-		err = installWithCargo(inst.Pkg)
+		cmd, err = installWithCargoCmd(inst.Pkg)
 	case system:
-		err = installWithSystem(inst.Pkg)
+		cmd, err = installWithSystemCmd(inst.Pkg)
 	case pacman:
-		err = installWithPacman(inst.Pkg)
+		cmd, err = installWithPacmanCmd(inst.Pkg)
 	default:
-		return "", errors.New(fmt.Sprintf("this installation method is either not implemented, or is invalid, method='%s'", inst.Method))
+		err = errors.New(fmt.Sprintf("this installation method is either not implemented, or is invalid, method='%s'", inst.Method))
 	}
-	return res, err
+	execute(cmd)
+	return cmd, err
 }
 
-func installWithCargo(pkg string) error {
+func installWithCargoCmd(pkg string) (string, error) {
 	panic("not implemented yet")
 	cmd := "cargo install " + pkg
-	return nil
+	return cmd, nil
 }
 
-func installWithPacman(pkg string) error {
+func installWithPacmanCmd(pkg string) (string, error) {
 	panic("not implemented yet")
 	cmd := "pacman -Syy " + pkg
-	return nil
+	return cmd, nil
 }
 
-func installWithSystem(pkg string) error {
+func installWithSystemCmd(pkg string) (string, error) {
 	panic("not implemented yet")
 	cmd, err := genSystemInstallCmd(pkg)
-	return err
+	return cmd, err
 }
 
 func genSystemInstallCmd(pkg string) (string, error) {
 	panic("not implemented yet")
+	cmd := pkg
 	return cmd, nil
 }
 
