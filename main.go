@@ -49,6 +49,8 @@ func main() {
 	lib.Logger.Debug(cli_args, "sourcedir", *sourcedir)
 	lib.Logger.Debug(cli_args, "targetdir", *targetdir)
 
+	lib.Assert(*onlyInstall && *onlyUninstall == false, "cannot pass both --only-install and --only-uninstall")
+
 	dirPath := *sourcedir + "/config"
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
