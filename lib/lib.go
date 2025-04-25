@@ -6,7 +6,9 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -98,31 +100,48 @@ func install(inst installInstruction) (cmd string, err error) {
 	switch inst.Method {
 	case cargo:
 		cmd, err = installWithCargoCmd(inst.Pkg)
+	case cargoBinstall:
+		cmd, err = installWithCargoBinstallCmd(inst.Pkg)
 	case system:
 		cmd, err = installWithSystemCmd(inst.Pkg)
 	case pacman:
 		cmd, err = installWithPacmanCmd(inst.Pkg)
+	case aur:
+		cmd, err = installWithAurCmd(inst.Pkg)
 	default:
 		err = errors.New(fmt.Sprintf("this installation method is either not implemented, or is invalid, method='%s'", inst.Method))
 	}
-	execute(cmd)
+	Logger.Info("got install cmd", "cmd", cmd)
+	if err != nil {
+		return cmd, err
+	}
+
+	err = execute(cmd)
 	return cmd, err
 }
 
 func installWithCargoCmd(pkg string) (string, error) {
-	panic("not implemented yet")
 	cmd := "cargo install " + pkg
 	return cmd, nil
 }
 
+func installWithCargoBinstallCmd(pkg string) (string, error) {
+	cmd := "cargo-binstall " + pkg
+	return cmd, nil
+}
+
 func installWithPacmanCmd(pkg string) (string, error) {
-	panic("not implemented yet")
-	cmd := "pacman -Syy " + pkg
+	cmd := "sudo pacman -Syy " + pkg
+	return cmd, nil
+}
+
+func installWithAurCmd(pkg string) (string, error) {
+	// TODO: detect the aur manager used and use that instead of using yay by default
+	cmd := "yay -S --sudoloop " + pkg
 	return cmd, nil
 }
 
 func installWithSystemCmd(pkg string) (string, error) {
-	panic("not implemented yet")
 	cmd, err := genSystemInstallCmd(pkg)
 	return cmd, err
 }
@@ -131,6 +150,27 @@ func genSystemInstallCmd(pkg string) (string, error) {
 	panic("not implemented yet")
 	cmd := pkg
 	return cmd, nil
+}
+
+func execute(cmd string) error {
+	splitCmd := strings.Split(cmd, " ")
+	{
+		execCmd := exec.Command(splitCmd[0], splitCmd[1:]...)
+		execCmd.Stderr = os.Stderr
+		execCmd.Stdin = os.Stdin
+		execCmd.Stdout = os.Stdout
+		err := execCmd.Start()
+		if err != nil {
+			return nil
+		}
+		err = execCmd.Wait()
+		if err != nil {
+			return err
+		}
+	}
+
+	Logger.Info("Successfully installed", "cmd", cmd)
+	return nil
 }
 
 func Uninstall(cfg config) (res *installInfo, err error) {
