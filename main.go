@@ -121,7 +121,7 @@ func main() {
 		lockfile.AddConfig(config)
 	}
 
-	pkgs := make([]string, 0)
+	pkgs := []string{}
 	if *pkgsTxt != "" {
 		pkgs = strings.Split(*pkgsTxt, ",")
 	}
