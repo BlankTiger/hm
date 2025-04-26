@@ -54,6 +54,21 @@ func (m *InstallMethod) CreateInstallCmd(pkg string) (cmd string, err error) {
 func (m *InstallMethod) CreateUninstallCmd(pkg string) (cmd string, err error) {
 	cmd, err = "", nil
 
+	switch *m {
+	case Cargo:
+		cmd, err = uninstallWithCargoCmd(pkg)
+	case CargoBinstall:
+		cmd, err = uninstallWithCargoBinstallCmd(pkg)
+	case System:
+		cmd, err = uninstallWithSystemCmd(pkg)
+	case Pacman:
+		cmd, err = uninstallWithPacmanCmd(pkg)
+	case Aur:
+		cmd, err = uninstallWithAurCmd(pkg)
+	default:
+		err = errors.New(fmt.Sprintf("this uninstallation method is either not implemented, or is invalid, method='%s'", *m))
+	}
+
 	return cmd, err
 }
 
@@ -62,9 +77,18 @@ func installWithCargoCmd(pkg string) (string, error) {
 	return cmd, nil
 }
 
+func uninstallWithCargoCmd(pkg string) (string, error) {
+	cmd := "cargo uninstall " + pkg
+	return cmd, nil
+}
+
 func installWithCargoBinstallCmd(pkg string) (string, error) {
 	cmd := "cargo-binstall " + pkg
 	return cmd, nil
+}
+
+func uninstallWithCargoBinstallCmd(pkg string) (string, error) {
+	return uninstallWithCargoCmd(pkg)
 }
 
 func installWithPacmanCmd(pkg string) (string, error) {
@@ -72,9 +96,21 @@ func installWithPacmanCmd(pkg string) (string, error) {
 	return cmd, nil
 }
 
+func uninstallWithPacmanCmd(pkg string) (string, error) {
+	cmd := "sudo pacman -R " + pkg
+	return cmd, nil
+}
+
+const aurManager = "yay"
+
 func installWithAurCmd(pkg string) (string, error) {
 	// TODO: detect the aur manager used and use that instead of using yay by default
-	cmd := "yay -S --sudoloop " + pkg
+	cmd := aurManager + " -S --sudoloop " + pkg
+	return cmd, nil
+}
+
+func uninstallWithAurCmd(pkg string) (string, error) {
+	cmd := aurManager + " -R " + pkg
 	return cmd, nil
 }
 
@@ -83,7 +119,18 @@ func installWithSystemCmd(pkg string) (string, error) {
 	return cmd, err
 }
 
+func uninstallWithSystemCmd(pkg string) (string, error) {
+	cmd, err := genSystemUninstallCmd(pkg)
+	return cmd, err
+}
+
 func genSystemInstallCmd(pkg string) (string, error) {
+	panic("not implemented yet")
+	cmd := pkg
+	return cmd, nil
+}
+
+func genSystemUninstallCmd(pkg string) (string, error) {
 	panic("not implemented yet")
 	cmd := pkg
 	return cmd, nil
