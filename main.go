@@ -24,7 +24,7 @@ func main() {
 	uninstall := flag.Bool("uninstall", false, "whether to uninstall packages using INSTALL instructions found in config folders")
 	onlyUninstall := flag.Bool("only-uninstall", false, "doesnt copy configs over, only uninstalls the packages for configs that would be removed based on their instructions, --uninstall can be omitted if this option is used")
 
-	upgrade := flag.Bool("upgrade", false, "whether to upgrade already installed packages")
+	upgrade := flag.Bool("upgrade", false, "whether to upgrade already installed packages, for now simply reruns the original install instruction")
 
 	pkgsTxt := flag.String("pkgs", "", "installs/uninstalls only the packages specified by this argument, empty means work on all active, non-hidden configs, example: --pkgs fish,ghostty")
 
