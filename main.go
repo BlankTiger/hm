@@ -148,10 +148,29 @@ func main() {
 		lib.Logger.Info("skipping copying/symlinking the config, because --only-install or --only-uninstall was passed")
 	}
 
-	// TODO: preserve information on what was already installed
-	// TODO: probably should skip installing stuff that was already installed and add an option to force an upgrade
+	// previously installed/uninstalled pkgs pointing to idx in the lockfileBefore, so that the information can be copied
+	previouslyInstalled := make(map[string]int)
+	for idx, cfg := range lockfileBefore.Configs {
+		if cfg.InstallInfo.IsInstalled || cfg.InstallInfo.WasUninstalled {
+			previouslyInstalled[cfg.Name] = idx
+		}
+	}
+
 	if *install || *onlyInstall {
 		for idx, cfg := range lockfile.Configs {
+			if idxInBefore, ok := previouslyInstalled[cfg.Name]; ok {
+				lib.Logger.Debug("skipping config for installation, because it is already installed, to upgrade pass the --upgrade flag", "skipped", cfg.Name)
+				prevInstInfo := &lockfileBefore.Configs[idxInBefore].InstallInfo
+				if prevInstInfo.IsInstalled {
+					lockfile.Configs[idx].InstallInfo = *prevInstInfo
+					continue
+				} else if prevInstInfo.WasUninstalled {
+					lockfile.Configs[idx].InstallInfo = *prevInstInfo
+				} else {
+					panic("shouldnt be possible to get here if its neither installed nor uninstalled")
+				}
+			}
+
 			if len(pkgs) > 0 && !slices.Contains(pkgs, cfg.Name) {
 				lib.Logger.Debug("skipping config for installation, because it wasnt in the provided list", "skipped", cfg.Name)
 				continue

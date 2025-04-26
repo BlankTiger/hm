@@ -88,6 +88,8 @@ func Install(cfg config) (res *installInfo, err error) {
 		res.InstallTime = now
 	}
 	res.IsInstalled = true
+	res.WasUninstalled = false
+	res.UninstallTime = ""
 	return res, err
 }
 
