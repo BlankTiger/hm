@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-type Mode int
-
 var Level = slog.LevelInfo
 var opts = slog.HandlerOptions{Level: &Level}
 var Logger = slog.New(slog.NewTextHandler(os.Stdout, &opts))
