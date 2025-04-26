@@ -40,17 +40,21 @@ func main() {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 		lib.Level = slog.LevelDebug
 	}
-	cli_args := "cli args"
-	lib.Logger.Debug(cli_args, "copy", *copyMode)
-	lib.Logger.Debug(cli_args, "dbg", *debug)
-	lib.Logger.Debug(cli_args, "install", *install)
-	lib.Logger.Debug(cli_args, "only-install", *onlyInstall)
-	lib.Logger.Debug(cli_args, "uninstall", *uninstall)
-	lib.Logger.Debug(cli_args, "only-uninstall", *onlyUninstall)
-	lib.Logger.Debug(cli_args, "upgrade", *upgrade)
-	lib.Logger.Debug(cli_args, "pkgs", *pkgsTxt)
-	lib.Logger.Debug(cli_args, "sourcedir", *sourcedir)
-	lib.Logger.Debug(cli_args, "targetdir", *targetdir)
+
+	// show flag information
+	{
+		cli_args := "cli args"
+		lib.Logger.Debug(cli_args, "copy", *copyMode)
+		lib.Logger.Debug(cli_args, "dbg", *debug)
+		lib.Logger.Debug(cli_args, "install", *install)
+		lib.Logger.Debug(cli_args, "only-install", *onlyInstall)
+		lib.Logger.Debug(cli_args, "uninstall", *uninstall)
+		lib.Logger.Debug(cli_args, "only-uninstall", *onlyUninstall)
+		lib.Logger.Debug(cli_args, "upgrade", *upgrade)
+		lib.Logger.Debug(cli_args, "pkgs", *pkgsTxt)
+		lib.Logger.Debug(cli_args, "sourcedir", *sourcedir)
+		lib.Logger.Debug(cli_args, "targetdir", *targetdir)
+	}
 
 	// flag assertions
 	{
