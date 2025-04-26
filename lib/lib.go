@@ -123,7 +123,45 @@ func execute(cmd string) error {
 
 func Uninstall(cfg config) (res *installInfo, err error) {
 	res, err = &cfg.InstallInfo, nil
+
+	if cfg.Requirements.Install == nil {
+		Logger.Debug("not uninstalling the pkg, because there was no INSTALL instructions", "pkg", cfg.Name)
+		return res, nil
+	}
+
+	// TODO: think on how to correctly handle dependencies when uninstalling, for now dont
+	// remove them when uninstalling
+	{
+		cmd, err := uninstall(*cfg.Requirements.Install)
+		if err != nil {
+			return res, err
+		}
+		res.UninstallInstruction = cmd
+	}
+
+	// info handling
+	{
+		res.InstallTime = ""
+		res.IsInstalled = false
+		res.WasUninstalled = true
+		now := time.Now().UTC().Format(time.DateTime)
+		res.UninstallTime = now
+	}
 	return res, err
+}
+
+func uninstall(inst installInstruction) (cmd string, err error) {
+	Assert(!inst.Method.IsEmpty(), fmt.Sprintf("at this point we should always have valid uninstall instructions, got: '%v'", inst))
+
+	Logger.Info("going to uninstall a pkg", "method", inst.Method, "pkg", inst.Pkg)
+	cmd, err = inst.Method.CreateUninstallCmd(inst.Pkg)
+	Logger.Info("got uninstall cmd", "cmd", cmd)
+	if err != nil {
+		return cmd, err
+	}
+
+	err = execute(cmd)
+	return cmd, err
 }
 
 func Assert(condition bool, message string) {
