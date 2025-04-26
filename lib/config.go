@@ -1,6 +1,7 @@
 package lib
 
 import (
+	i "blanktiger/hm/instructions"
 	"fmt"
 	"io"
 	"os"
@@ -71,39 +72,14 @@ func newRequirements() requirements {
 }
 
 type installInstruction struct {
-	Method installMethod `json:"method"`
-	Pkg    string        `json:"pkg"`
+	Method i.InstallMethod `json:"method"`
+	Pkg    string          `json:"pkg"`
 }
 
 func newInstallInstruction() installInstruction {
 	return installInstruction{
-		Method: system,
+		Method: i.System,
 		Pkg:    "",
-	}
-}
-
-type installMethod string
-
-const (
-	apt           = "apt"
-	pacman        = "pacman"
-	aur           = "aur"
-	cargo         = "cargo"
-	cargoBinstall = "cargo-binstall"
-	system        = "system"
-	bash          = "bash"
-)
-
-func (i *installMethod) isEmpty() bool {
-	return string(*i) == ""
-}
-
-func isValidInstallationMethod(method string) bool {
-	switch method {
-	case apt, pacman, aur, cargo, system, bash, cargoBinstall:
-		return true
-	default:
-		return false
 	}
 }
 
@@ -165,8 +141,8 @@ func parseInstallInstruction(inst string) (res *installInstruction, err error) {
 	{
 		method := parts[0]
 		errMsg := fmt.Sprintf("must be an implemented, valid installation method, instead got: '%s'", method)
-		Assert(isValidInstallationMethod(method), errMsg)
-		res.Method = installMethod(method)
+		Assert(i.IsValidInstallationMethod(method), errMsg)
+		res.Method = i.InstallMethod(method)
 	}
 
 	{

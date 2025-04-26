@@ -93,25 +93,10 @@ func Install(cfg config) (res *installInfo, err error) {
 }
 
 func install(inst installInstruction) (cmd string, err error) {
-	Assert(!inst.Method.isEmpty(), fmt.Sprintf("at this point we should always have valid installation instructions, got: '%v'", inst))
-
-	cmd, err = "", nil
+	Assert(!inst.Method.IsEmpty(), fmt.Sprintf("at this point we should always have valid installation instructions, got: '%v'", inst))
 
 	Logger.Info("going to install a pkg", "method", inst.Method, "pkg", inst.Pkg)
-	switch inst.Method {
-	case cargo:
-		cmd, err = installWithCargoCmd(inst.Pkg)
-	case cargoBinstall:
-		cmd, err = installWithCargoBinstallCmd(inst.Pkg)
-	case system:
-		cmd, err = installWithSystemCmd(inst.Pkg)
-	case pacman:
-		cmd, err = installWithPacmanCmd(inst.Pkg)
-	case aur:
-		cmd, err = installWithAurCmd(inst.Pkg)
-	default:
-		err = errors.New(fmt.Sprintf("this installation method is either not implemented, or is invalid, method='%s'", inst.Method))
-	}
+	cmd, err = inst.Method.CreateInstallCmd(inst.Pkg)
 	Logger.Info("got install cmd", "cmd", cmd)
 	if err != nil {
 		return cmd, err

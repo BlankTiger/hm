@@ -12,7 +12,7 @@ const (
 	// hard copy
 	Cpy Mode = "copy"
 	// symlinks
-	Dev = "symlink"
+	Dev Mode = "symlink"
 )
 
 type lockfile struct {
