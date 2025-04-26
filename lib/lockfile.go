@@ -6,11 +6,13 @@ import (
 	"os"
 )
 
+type Mode string
+
 const (
 	// hard copy
-	Cpy Mode = iota
+	Cpy Mode = "copy"
 	// symlinks
-	Dev
+	Dev = "symlink"
 )
 
 type lockfile struct {
