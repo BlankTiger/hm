@@ -83,13 +83,14 @@ func Install(cfg config) (res *installInfo, err error) {
 		res.InstallInstruction = cmd
 	}
 
+	// info handling
 	{
 		now := time.Now().UTC().Format(time.DateTime)
 		res.InstallTime = now
+		res.IsInstalled = true
+		res.WasUninstalled = false
+		res.UninstallTime = ""
 	}
-	res.IsInstalled = true
-	res.WasUninstalled = false
-	res.UninstallTime = ""
 	return res, err
 }
 

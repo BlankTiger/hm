@@ -174,16 +174,15 @@ func main() {
 		for idx, cfg := range lockfile.Configs {
 			if idxInBefore, ok := previouslyInstalled[cfg.Name]; ok {
 				prevInstInfo := &lockfileBefore.Configs[idxInBefore].InstallInfo
+				lockfile.Configs[idx].InstallInfo = *prevInstInfo
+
 				if prevInstInfo.IsInstalled && *upgrade {
-					lib.Logger.Debug("upgrading an already installed pkg", "name", cfg.Name)
-					lockfile.Configs[idx].InstallInfo = *prevInstInfo
+					lib.Logger.Info("upgrading an already installed pkg", "name", cfg.Name)
 				} else if prevInstInfo.IsInstalled {
 					lib.Logger.Debug("skipping config for installation, because it is already installed, to upgrade pass the --upgrade flag", "name", cfg.Name)
-					lockfile.Configs[idx].InstallInfo = *prevInstInfo
 					continue
 				} else if prevInstInfo.WasUninstalled {
 					lib.Logger.Debug("installing a previously uninstalled pkg", "name", cfg.Name)
-					lockfile.Configs[idx].InstallInfo = *prevInstInfo
 				} else {
 					panic("shouldnt be possible to get here if its neither installed nor uninstalled")
 				}
