@@ -56,17 +56,15 @@ func ContainsConfig(configs []config, c config) bool {
 }
 
 type requirements struct {
-	Name         string                `json:"name"`
-	Install      *installInstruction   `json:"installInstructions"`
-	Uninstall    *uninstallInstruction `json:"uninstallInstructions"`
-	Dependencies []installInstruction  `json:"dependencies"`
+	Name         string               `json:"name"`
+	Install      *installInstruction  `json:"installInstructions"`
+	Dependencies []installInstruction `json:"dependencies"`
 }
 
 func newRequirements() requirements {
 	return requirements{
 		Name:         "",
 		Install:      nil,
-		Uninstall:    nil,
 		Dependencies: []installInstruction{},
 	}
 }
@@ -81,16 +79,6 @@ func newInstallInstruction() installInstruction {
 		Method: i.System,
 		Pkg:    "",
 	}
-}
-
-// TODO:
-// func uninstallationMethodBasedOnInstallationMethod(instMethod installationMethod) UninstallationInstructions
-
-// TODO: think what this should include, for now just type alias to installInstruction
-type uninstallInstruction installInstruction
-
-func newUninstallInstruction() uninstallInstruction {
-	return uninstallInstruction(newInstallInstruction())
 }
 
 func parseInstallInstructions(path string) (res *installInstruction, err error) {
@@ -150,11 +138,6 @@ func parseInstallInstruction(inst string) (res *installInstruction, err error) {
 		res.Pkg = strings.Trim(pkg, "\n\t")
 	}
 	return res, nil
-}
-
-func parseUinstallInstructions(path string) (res *uninstallInstruction, err error) {
-	panic("unimplemented")
-	// return res, err
 }
 
 func parseDependencies(path string) (res []installInstruction, err error) {

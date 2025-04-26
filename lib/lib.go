@@ -18,7 +18,6 @@ var Logger = slog.New(slog.NewTextHandler(os.Stdout, &opts))
 
 const (
 	INSTALL_PATH_POSTFIX      = "/INSTALL"
-	UNINSTLL_PATH_POSTFIX     = "/UNINSTALL"
 	DEPENDENCIES_PATH_POSTFIX = "/DEPENDENCIES"
 )
 
@@ -34,12 +33,6 @@ func ParseRequirements(path string) (res *requirements, err error) {
 		if installationInstructions != nil {
 			res.Install = installationInstructions
 		}
-	}
-
-	{
-		// TODO: implement
-		// Logger.Debug("parsing uninstallation instructions")
-		// uninstallationInstructions, err := parseUinstallationInstructions(path)
 	}
 
 	{
