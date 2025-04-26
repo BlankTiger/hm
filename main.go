@@ -170,18 +170,24 @@ func main() {
 		}
 	}
 
+	// copy that installation info from the previous lock regardless of installation/upgrade/uninstallation
+	for idx, cfg := range lockfile.Configs {
+		if idxInBefore, ok := previouslyInstalled[cfg.Name]; ok {
+			prevInstInfo := &lockfileBefore.Configs[idxInBefore].InstallInfo
+			lockfile.Configs[idx].InstallInfo = *prevInstInfo
+		}
+	}
+
 	if *install || *onlyInstall || *upgrade {
 		for idx, cfg := range lockfile.Configs {
-			if idxInBefore, ok := previouslyInstalled[cfg.Name]; ok {
-				prevInstInfo := &lockfileBefore.Configs[idxInBefore].InstallInfo
-				lockfile.Configs[idx].InstallInfo = *prevInstInfo
-
-				if prevInstInfo.IsInstalled && *upgrade {
+			if _, ok := previouslyInstalled[cfg.Name]; ok {
+				instInfo := &cfg.InstallInfo
+				if instInfo.IsInstalled && *upgrade {
 					lib.Logger.Info("upgrading an already installed pkg", "name", cfg.Name)
-				} else if prevInstInfo.IsInstalled {
+				} else if instInfo.IsInstalled {
 					lib.Logger.Debug("skipping config for installation, because it is already installed, to upgrade pass the --upgrade flag", "name", cfg.Name)
 					continue
-				} else if prevInstInfo.WasUninstalled {
+				} else if instInfo.WasUninstalled {
 					lib.Logger.Debug("installing a previously uninstalled pkg", "name", cfg.Name)
 				} else {
 					panic("shouldnt be possible to get here if its neither installed nor uninstalled")
