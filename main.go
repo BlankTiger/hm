@@ -24,6 +24,8 @@ func main() {
 	uninstall := flag.Bool("uninstall", false, "whether to uninstall packages using INSTALL instructions found in config folders")
 	onlyUninstall := flag.Bool("only-uninstall", false, "doesnt copy configs over, only uninstalls the packages for configs that would be removed based on their instructions, --uninstall can be omitted if this option is used")
 
+	upgrade := flag.Bool("upgrade", false, "whether to upgrade already installed packages")
+
 	pkgsTxt := flag.String("pkgs", "", "installs/uninstalls only the packages specified by this argument, empty means work on all active, non-hidden configs, example: --pkgs fish,ghostty")
 
 	sourcedir := flag.String("sourcedir", homeDir+"/.config/homecfg", "source of configuration files, without the trailing /")
@@ -45,13 +47,21 @@ func main() {
 	lib.Logger.Debug(cli_args, "only-install", *onlyInstall)
 	lib.Logger.Debug(cli_args, "uninstall", *uninstall)
 	lib.Logger.Debug(cli_args, "only-uninstall", *onlyUninstall)
+	lib.Logger.Debug(cli_args, "upgrade", *upgrade)
 	lib.Logger.Debug(cli_args, "pkgs", *pkgsTxt)
 	lib.Logger.Debug(cli_args, "sourcedir", *sourcedir)
 	lib.Logger.Debug(cli_args, "targetdir", *targetdir)
 
-	lib.Assert((*onlyInstall && *onlyUninstall) == false, "cannot pass both --only-install and --only-uninstall")
-	lib.Assert((*install && *onlyUninstall) == false, "cannot pass both --install and --only-uninstall")
-	lib.Assert((*onlyInstall && *uninstall) == false, "cannot pass both --only-install and --uninstall")
+	// flag assertions
+	{
+		lib.Assert((*onlyInstall && *onlyUninstall) == false, "cannot pass both --only-install and --only-uninstall")
+		lib.Assert((*install && *onlyUninstall) == false, "cannot pass both --install and --only-uninstall")
+		lib.Assert((*onlyInstall && *uninstall) == false, "cannot pass both --only-install and --uninstall")
+		lib.Assert((*install && *upgrade) == false, "cannot pass both --install and --upgrade flags")
+		lib.Assert((*onlyInstall && *upgrade) == false, "cannot pass both --only-install and --upgrade flags")
+		lib.Assert((*uninstall && *upgrade) == false, "cannot pass both --uninstall and --upgrade flags")
+		lib.Assert((*onlyUninstall && *upgrade) == false, "cannot pass both --only-uninstall and --upgrade flags")
+	}
 
 	dirPath := *sourcedir + "/config"
 	entries, err := os.ReadDir(dirPath)
@@ -156,15 +166,19 @@ func main() {
 		}
 	}
 
-	if *install || *onlyInstall {
+	if *install || *onlyInstall || *upgrade {
 		for idx, cfg := range lockfile.Configs {
 			if idxInBefore, ok := previouslyInstalled[cfg.Name]; ok {
-				lib.Logger.Debug("skipping config for installation, because it is already installed, to upgrade pass the --upgrade flag", "skipped", cfg.Name)
 				prevInstInfo := &lockfileBefore.Configs[idxInBefore].InstallInfo
-				if prevInstInfo.IsInstalled {
+				if prevInstInfo.IsInstalled && *upgrade {
+					lib.Logger.Debug("upgrading an already installed pkg", "name", cfg.Name)
+					lockfile.Configs[idx].InstallInfo = *prevInstInfo
+				} else if prevInstInfo.IsInstalled {
+					lib.Logger.Debug("skipping config for installation, because it is already installed, to upgrade pass the --upgrade flag", "name", cfg.Name)
 					lockfile.Configs[idx].InstallInfo = *prevInstInfo
 					continue
 				} else if prevInstInfo.WasUninstalled {
+					lib.Logger.Debug("installing a previously uninstalled pkg", "name", cfg.Name)
 					lockfile.Configs[idx].InstallInfo = *prevInstInfo
 				} else {
 					panic("shouldnt be possible to get here if its neither installed nor uninstalled")
