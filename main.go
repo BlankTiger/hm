@@ -258,8 +258,20 @@ func main() {
 		}
 	}
 
+	namesToIdx := make(map[string]int)
+	for idx, cfg := range lockfile.SkippedConfigs {
+		namesToIdx[cfg.Name] = idx
+	}
+	lockDiff := lockfileBefore.Diff(lockfile)
 	if *uninstall || *onlyUninstall {
-		for idx, cfg := range lockfile.SkippedConfigs {
+		for _, _cfg := range lockDiff.NewlySkippedConfigs {
+			idx, ok := namesToIdx[_cfg.Name]
+			if !ok {
+				lib.Logger.Debug("skipping config for uninstallation, because it's not newly skipped", "skipped", _cfg.Name)
+				continue
+			}
+			cfg := lockfile.SkippedConfigs[idx]
+
 			if len(pkgs) > 0 && !slices.Contains(pkgs, cfg.Name) {
 				lib.Logger.Debug("skipping config for uninstallation, because it wasnt in the provided list", "skipped", cfg.Name)
 				continue
@@ -270,11 +282,10 @@ func main() {
 				lib.Logger.Error("something went wrong while trying to uninstall using the instructions", "pkg", cfg.Name, "err", err)
 				continue
 			}
-			lockfile.Configs[idx].InstallInfo = *info
+			lockfile.SkippedConfigs[idx].InstallInfo = *info
 		}
 	}
 
-	lockDiff := lockfileBefore.Diff(lockfile)
 	{
 		err := lockDiff.Save(lockfileDiffPath, defaultIndent)
 		if err != nil {

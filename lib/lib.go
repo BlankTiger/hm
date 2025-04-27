@@ -183,6 +183,8 @@ func execute(cmd string) error {
 func Uninstall(cfg config) (res *installInfo, err error) {
 	res, err = &cfg.InstallInfo, nil
 
+	defer runUninstallScriptIfItExists(cfg, res)
+
 	if cfg.Requirements.Install == nil {
 		Logger.Debug("not uninstalling the pkg, because there was no INSTALL instructions", "pkg", cfg.Name)
 		return res, nil
@@ -191,7 +193,7 @@ func Uninstall(cfg config) (res *installInfo, err error) {
 	// TODO: think on how to correctly handle dependencies when uninstalling, for now dont
 	// remove them when uninstalling
 	{
-		cmd, err := uninstall(*cfg.Requirements.Install)
+		cmd, err := uninstall(cfg.Requirements.Install)
 		if err != nil {
 			return res, err
 		}
@@ -209,7 +211,38 @@ func Uninstall(cfg config) (res *installInfo, err error) {
 	return res, err
 }
 
-func uninstall(inst installInstruction) (cmd string, err error) {
+func runUninstallScriptIfItExists(cfg config, info *installInfo) {
+	idx := strings.LastIndex(cfg.From, "/")
+	from := cfg.From
+	path := from[:idx] + "/." + from[idx+1:] + "/UNINSTALL"
+	Logger.Debug("checking if UNINSTALL exists", "path", path)
+	f, err := os.Open(path)
+	if err != nil {
+		Logger.Debug("UNINSTALL not found", "path", path)
+		return
+	}
+	f.Close()
+	Logger.Info("running the /UNINSTALL script", "path", path)
+	cmd := exec.Command("bash", path)
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	if err != nil {
+		return
+	}
+	{
+		info.IsInstalled = false
+		info.DependenciesInstalled = false
+		info.InstallInstruction = ""
+		info.InstallTime = ""
+		info.UninstallInstruction = "bash " + path
+		info.WasUninstalled = true
+		info.UninstallTime = now()
+	}
+}
+
+func uninstall(inst *installInstruction) (cmd string, err error) {
 	Assert(!inst.Method.IsEmpty(), fmt.Sprintf("at this point we should always have valid uninstall instructions, got: '%v'", inst))
 
 	Logger.Info("going to uninstall a pkg", "method", inst.Method, "pkg", inst.Pkg)

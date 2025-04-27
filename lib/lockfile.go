@@ -131,7 +131,6 @@ func (l *lockfile) Diff(newLockfile *lockfile) lockfileDiff {
 			removedConfigs = append(removedConfigs, prevConf)
 		}
 
-		Logger.Debug("DIFFING", "SkippedConfigs", newLockfile.SkippedConfigs, "prevConf", prevConf)
 		if ContainsConfig(newLockfile.SkippedConfigs, prevConf) && !ContainsConfig(l.SkippedConfigs, prevConf) {
 			newlySkippedConfigs = append(newlySkippedConfigs, prevConf)
 		}
