@@ -98,11 +98,18 @@ Available methods are:
 - `system`
 - `apt`
 - `pacman`
+- `dnf`
+- `brew`
 - `aur`
 - `cargo`
 - `cargo-binstall`
 - `bash`, this executes what you write directly after the `:`. This method doesn't provide automatic uninstall instruction generation, which means that you will not be able to use `--uninstall` to remove a package installed this way.
 
+An example using bash could be:
+
+```
+bash:curl -fsSL https://example.com/install.sh | bash
+```
 
 The `system` method is particularly powerful as it dynamically detects your operating system package manager and uses the appropriate installation command. For example:
 
@@ -112,6 +119,8 @@ The `system` method is particularly powerful as it dynamically detects your oper
 - On macOS with Homebrew installed, it will use `brew`
 
 This makes your configuration files more portable across different systems.
+
+Similar thing is implemented for the `aur` method. It will try to find the aur package manager that is installed.
 
 ### DEPENDENCIES
 
