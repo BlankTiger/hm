@@ -72,6 +72,7 @@ Each configuration in the source directory should be a folder:
 ```
 $HOME/.config/homecfg/
 └── config/
+    ├── DEPENDENCIES          # Global installation instruction file (to install many common dependencies)
     ├── fish/                 # Fish shell configuration
     │   ├── config.fish
     │   ├── INSTALL           # Installation instructions
@@ -135,6 +136,11 @@ cargo:fd
 system:fzf
 system:git
 ```
+
+### config/DEPENDENCIES
+
+The `config/DEPENDENCIES` file is structurally the same as all the other `DEPENDENCIES` files in individual config directories. Packages specified in this file are installed regardless of managed configs before executing `INSTALL` instructions for individual configs.
+
 
 ## Advanced Usage
 
