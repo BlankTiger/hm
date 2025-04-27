@@ -19,13 +19,54 @@ const (
 	DEPENDENCIES_PATH_POSTFIX = "/DEPENDENCIES"
 )
 
-func ParseGlobalDependencies(path string) (res []installInstruction, err error) {
-	return parseDependencies(path)
+func ParseGlobalDependencies(path string) (res []globalDependency, err error) {
+	res, err = []globalDependency{}, nil
+
+	dependencies, err := parseDependencies(path)
+	if err != nil {
+		return res, err
+	}
+
+	for _, dep := range dependencies {
+		res = append(res, newGlobalDependency(&dep))
+	}
+
+	return res, err
 }
 
-func InstallGlobalDependencies(dependencies []installInstruction) error {
+func InstallGlobalDependencies(dependencies *[]globalDependency) error {
 	Logger.Info("installing global dependencies")
-	return installDependencies(dependencies)
+
+	for idx, dep := range *dependencies {
+		info, err := installGlobalDependency(dep)
+		if err != nil {
+			return err
+		}
+		(*dependencies)[idx].InstallInfo = info
+	}
+
+	return nil
+}
+
+func installGlobalDependency(dep globalDependency) (info installInfo, err error) {
+	info, err = installInfo{}, nil
+
+	cmd, err := install(*dep.Instruction)
+	if err != nil {
+		return info, err
+	}
+
+	{
+		info.InstallInstruction = cmd
+		info.DependenciesInstalled = true
+		info.InstallTime = now()
+		info.IsInstalled = true
+		info.WasUninstalled = false
+		info.UninstallInstruction = ""
+		info.UninstallTime = ""
+	}
+
+	return info, err
 }
 
 func ParseRequirements(path string) (res *requirements, err error) {
@@ -81,13 +122,16 @@ func Install(cfg config) (res *installInfo, err error) {
 
 	// info handling
 	{
-		now := time.Now().UTC().Format(time.DateTime)
-		res.InstallTime = now
+		res.InstallTime = now()
 		res.IsInstalled = true
 		res.WasUninstalled = false
 		res.UninstallTime = ""
 	}
 	return res, err
+}
+
+func now() string {
+	return time.Now().UTC().Format(time.DateTime)
 }
 
 func installDependencies(dependencies []installInstruction) error {

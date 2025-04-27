@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"slices"
 )
 
 type Mode string
@@ -16,10 +17,58 @@ const (
 )
 
 type lockfile struct {
-	Version        string   `json:"version"`
-	Mode           Mode     `json:"mode"`
-	Configs        []config `json:"configs"`
-	SkippedConfigs []config `json:"skippedConfigs"`
+	Version                     string             `json:"version"`
+	Mode                        Mode               `json:"mode"`
+	GlobalDependencies          []globalDependency `json:"globalDependencies"`
+	GlobalDependenciesInstalled bool               `json:"globalDependenciesInstalled"`
+	Configs                     []config           `json:"configs"`
+	SkippedConfigs              []config           `json:"skippedConfigs"`
+}
+
+type globalDependency struct {
+	Instruction *installInstruction `json:"installInstruction"`
+	InstallInfo installInfo         `json:"installInfo"`
+}
+
+func newGlobalDependency(inst *installInstruction) globalDependency {
+	return globalDependency{
+		Instruction: inst,
+		InstallInfo: installInfo{},
+	}
+}
+
+func DidGlobalDependenciesChange(depsA, depsB *[]globalDependency) bool {
+	namesA := []string{}
+	for _, dep := range *depsA {
+		namesA = append(namesA, dep.Instruction.Pkg)
+	}
+
+	namesB := []string{}
+	for _, dep := range *depsB {
+		namesB = append(namesB, dep.Instruction.Pkg)
+	}
+
+	if len(namesA) != len(namesB) {
+		return true
+	}
+
+	for _, nameA := range namesA {
+		if !slices.Contains(namesB, nameA) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func WereGlobalDependenciesInstalled(deps *[]globalDependency) bool {
+	for _, dep := range *deps {
+		if dep.InstallInfo.IsInstalled || dep.InstallInfo.WasUninstalled {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (l *lockfile) AppendSkippedConfig(config config) {
@@ -28,9 +77,10 @@ func (l *lockfile) AppendSkippedConfig(config config) {
 
 func newLockfile() lockfile {
 	return lockfile{
-		Version:        "0.1.0",
-		Configs:        []config{},
-		SkippedConfigs: []config{},
+		Version:            "0.1.0",
+		GlobalDependencies: []globalDependency{},
+		Configs:            []config{},
+		SkippedConfigs:     []config{},
 	}
 }
 
@@ -71,6 +121,7 @@ func (d *lockfileDiff) Save(path, indent string) error {
 
 // method should be called on an old version of the lockfile
 func (l *lockfile) Diff(newLockfile *lockfile) lockfileDiff {
+	// TODO: also diff global dependencies
 	addedConfigs := []config{}
 	removedConfigs := []config{}
 	newlySkippedConfigs := []config{}

@@ -26,7 +26,6 @@ type installInfo struct {
 	WasUninstalled       bool   `json:"wasUninstalled"`
 	UninstallTime        string `json:"uninstallTime"`
 	UninstallInstruction string `json:"uninstallInstruction"`
-	UinstallInstruction  string `json:"uinstallInstruction"`
 }
 
 func NewConfig(name, from, to string, reqs *requirements) config {
