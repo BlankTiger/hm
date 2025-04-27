@@ -7,7 +7,7 @@ project (very slow, probably a skill issue, I know).
 
 ## Overview
 
-`hm` (Home Manager) helps you manage your dotfiles and system configurations by:
+`hm` helps you manage your dotfiles and system configurations by:
 
 1. Copying or symlinking configuration files from a source directory to their target locations
 2. Installing, uninstalling, and upgrading packages based on instruction files
@@ -45,7 +45,7 @@ hm --only-install
 # Upgrade already installed packages
 hm --upgrade
 
-# Uninstall packages
+# Uninstall packages that you prefixed with `.`
 hm --uninstall
 
 # Only uninstall packages without modifying configs
@@ -60,6 +60,12 @@ hm --pkgs fish,ghostty
 By default, `hm` looks for configurations in:
 - Source directory: `$HOME/.config/homecfg/config/`
 - Target directory: `$HOME/.config/`
+
+These directories can be overwritten by doing:
+
+```bash
+hm --sourcedir ~/my-dotfiles --targetdir ~/.local
+```
 
 Each configuration in the source directory should be a folder:
 
@@ -81,18 +87,31 @@ $HOME/.config/homecfg/
 
 ### INSTALL
 
-The `INSTALL` file contains instructions for installing a package:
+The `INSTALL` file contains an instruction for installing a package, format is `method:package`. An example if you wanted to install `fish` could be:
 
 ```
-# Format: method:package
-cargo:ripgrep
-apt:neovim
-pacman:fish
-aur:yay
-system:firefox
-bash:curl -fsSL https://example.com/install.sh | bash
-cargo-binstall:bat
+system:fish
 ```
+
+Available methods are:
+
+- `system`
+- `apt`
+- `pacman`
+- `aur`
+- `cargo`
+- `cargo-binstall`
+- `bash`, this executes what you write directly after the `:`. This method doesn't provide automatic uninstall instruction generation, which means that you will not be able to use `--uninstall` to remove a package installed this way.
+
+
+The `system` method is particularly powerful as it dynamically detects your operating system package manager and uses the appropriate installation command. For example:
+
+- On Debian/Ubuntu systems, it will use `apt`
+- On Arch Linux, it will use `pacman`
+- On Fedora, it will use `dnf`
+- On macOS with Homebrew installed, it will use `brew`
+
+This makes your configuration files more portable across different systems.
 
 ### DEPENDENCIES
 
@@ -100,19 +119,15 @@ The `DEPENDENCIES` file lists dependencies required for a configuration:
 
 ```
 cargo:fd
-apt:fzf
-pacman:git
+system:fzf
+system:git
 ```
 
 ## Advanced Usage
 
-### Using Different Directories
-
-```bash
-hm --sourcedir ~/my-dotfiles --targetdir ~/.local
-```
-
 ### Debug Mode
+
+To show all available logs produced during execution, do:
 
 ```bash
 hm --dbg
@@ -137,7 +152,7 @@ hm --dbg
 
 ## Lockfile
 
-`hm` creates a lockfile (`hmlock.json`) to track:
+`hm` creates a lockfile (`hmlock.json`) in the target directory to track:
 - What configurations have been deployed
 - What packages have been installed
 - Installation timestamps
