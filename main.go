@@ -45,6 +45,7 @@ func main() {
 	// TODO: make this better, if this gets commented out, then we won't ever
 	// find the system package manager
 	instructions.FindSystemPkgManager()
+	instructions.FindAurPkgManager()
 	if *debug {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 		level = slog.LevelDebug

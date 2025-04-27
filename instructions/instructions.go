@@ -34,7 +34,6 @@ var aurPkgManager = INVALID
 func FindAurPkgManager() {
 	pkgManager := INVALID
 
-	// TODO: find out if these commands will be correct (version options)
 	Logger.Info("Looking for aur package manager...")
 	if cmdAvailable(Yay) {
 		pkgManager = Yay
@@ -114,6 +113,8 @@ func (m *InstallMethod) CreateInstallCmd(pkg string) (cmd string, err error) {
 	cmd, err = "", nil
 
 	switch *m {
+
+	// system commands
 	case System:
 		cmd, err = installWithSystemCmd(pkg)
 	case Apt:
@@ -124,8 +125,20 @@ func (m *InstallMethod) CreateInstallCmd(pkg string) (cmd string, err error) {
 		cmd, err = installWithBrewCmd(pkg)
 	case Pacman:
 		cmd, err = installWithPacmanCmd(pkg)
+
+	// aur
 	case Aur:
 		cmd, err = installWithAurCmd(pkg)
+	case Yay:
+		cmd, err = installWithYayCmd(pkg)
+	case Paru:
+		cmd, err = installWithParuCmd(pkg)
+	case Pacaur:
+		cmd, err = installWithPacaurCmd(pkg)
+	case Aurman:
+		cmd, err = installWithAurmanCmd(pkg)
+
+	// misc
 	case Cargo:
 		cmd, err = installWithCargoCmd(pkg)
 	case CargoBinstall:
@@ -133,6 +146,7 @@ func (m *InstallMethod) CreateInstallCmd(pkg string) (cmd string, err error) {
 	case Bash:
 		// in this case the package is actually a command passed in by the user
 		cmd = pkg
+
 	default:
 		err = errors.New(fmt.Sprintf("this installation method is either not implemented, or is invalid, method='%s'", *m))
 	}
@@ -144,6 +158,8 @@ func (m *InstallMethod) CreateUninstallCmd(pkg string) (cmd string, err error) {
 	cmd, err = "", nil
 
 	switch *m {
+
+	// system commands
 	case System:
 		cmd, err = uninstallWithSystemCmd(pkg)
 	case Apt:
@@ -154,12 +170,25 @@ func (m *InstallMethod) CreateUninstallCmd(pkg string) (cmd string, err error) {
 		cmd, err = uninstallWithBrewCmd(pkg)
 	case Pacman:
 		cmd, err = uninstallWithPacmanCmd(pkg)
+
+	// aur
 	case Aur:
 		cmd, err = uninstallWithAurCmd(pkg)
+	case Yay:
+		cmd, err = uninstallWithYayCmd(pkg)
+	case Paru:
+		cmd, err = uninstallWithParuCmd(pkg)
+	case Pacaur:
+		cmd, err = uninstallWithPacaurCmd(pkg)
+	case Aurman:
+		cmd, err = uninstallWithAurmanCmd(pkg)
+
+	// misc
 	case Cargo:
 		cmd, err = uninstallWithCargoCmd(pkg)
 	case CargoBinstall:
 		cmd, err = uninstallWithCargoBinstallCmd(pkg)
+
 	default:
 		err = errors.New(fmt.Sprintf("this uninstallation method is either not implemented, or is invalid, method='%s'", *m))
 	}
@@ -226,16 +255,59 @@ func uninstallWithBrewCmd(pkg string) (string, error) {
 	return cmd, nil
 }
 
-const aurManager = "yay"
-
 func installWithAurCmd(pkg string) (string, error) {
-	// TODO: detect the aur manager used and use that instead of using yay by default
-	cmd := aurManager + " -S --sudoloop " + pkg
-	return cmd, nil
+	cmd, err := genAurInstallCmd(aurPkgManager, pkg)
+	return cmd, err
 }
 
 func uninstallWithAurCmd(pkg string) (string, error) {
-	cmd := aurManager + " -R " + pkg
+	cmd, err := genAurUninstallCmd(aurPkgManager, pkg)
+	return cmd, err
+}
+
+func installWithYayCmd(pkg string) (string, error) {
+	cmd := "yay -S --sudoloop " + pkg
+	return cmd, nil
+}
+
+func uninstallWithYayCmd(pkg string) (string, error) {
+	cmd := "yay -R " + pkg
+	return cmd, nil
+}
+
+func installWithParuCmd(pkg string) (string, error) {
+	// TODO: verify
+	cmd := "paru -S " + pkg
+	return cmd, nil
+}
+
+func uninstallWithParuCmd(pkg string) (string, error) {
+	// TODO: verify
+	cmd := "paru -R " + pkg
+	return cmd, nil
+}
+
+func installWithPacaurCmd(pkg string) (string, error) {
+	// TODO: verify
+	cmd := "pacaur -S " + pkg
+	return cmd, nil
+}
+
+func uninstallWithPacaurCmd(pkg string) (string, error) {
+	// TODO: verify
+	cmd := "pacaur -R " + pkg
+	return cmd, nil
+}
+
+func installWithAurmanCmd(pkg string) (string, error) {
+	// TODO: verify
+	cmd := "aurman -S " + pkg
+	return cmd, nil
+}
+
+func uninstallWithAurmanCmd(pkg string) (string, error) {
+	// TODO: verify
+	cmd := "aurman -R " + pkg
 	return cmd, nil
 }
 
@@ -245,7 +317,7 @@ func installWithSystemCmd(pkg string) (string, error) {
 }
 
 func uninstallWithSystemCmd(pkg string) (string, error) {
-	cmd, err := genSystemUninstallCmd(pkg)
+	cmd, err := genSystemUninstallCmd(systemPkgManager, pkg)
 	return cmd, err
 }
 
@@ -258,10 +330,12 @@ func genSystemInstallCmd(manager InstallMethod, pkg string) (cmd string, err err
 	cmd, err = "", nil
 
 	switch manager {
+
 	case INVALID:
 		err = couldntFindSysPkgManagerErr
 	default:
 		err = notSystemPkgManagerErr
+
 	case Pacman:
 		cmd, err = installWithPacmanCmd(pkg)
 	case Apt:
@@ -270,12 +344,48 @@ func genSystemInstallCmd(manager InstallMethod, pkg string) (cmd string, err err
 		cmd, err = installWithDnfCmd(pkg)
 	case Brew:
 		cmd, err = installWithBrewCmd(pkg)
+
 	}
 
 	return cmd, err
 }
 
-func genSystemUninstallCmd(pkg string) (string, error) {
+func genSystemUninstallCmd(manager InstallMethod, pkg string) (string, error) {
+	panic("not implemented yet")
+	cmd := pkg
+	return cmd, nil
+}
+
+var (
+	couldntFindAurPkgManagerErr = errors.New("couldn't detect aur package manager")
+	notAurPkgManagerErr         = errors.New("passed in an installation method that is not an aur one")
+)
+
+func genAurInstallCmd(manager InstallMethod, pkg string) (cmd string, err error) {
+	cmd, err = "", nil
+
+	switch manager {
+
+	case INVALID:
+		err = couldntFindAurPkgManagerErr
+	default:
+		err = notAurPkgManagerErr
+
+	case Yay:
+		cmd, err = installWithYayCmd(pkg)
+	case Paru:
+		cmd, err = installWithParuCmd(pkg)
+	case Pacaur:
+		cmd, err = installWithPacaurCmd(pkg)
+	case Aurman:
+		cmd, err = installWithAurmanCmd(pkg)
+
+	}
+
+	return cmd, err
+}
+
+func genAurUninstallCmd(manager InstallMethod, pkg string) (string, error) {
 	panic("not implemented yet")
 	cmd := pkg
 	return cmd, nil
