@@ -350,9 +350,27 @@ func genSystemInstallCmd(manager InstallMethod, pkg string) (cmd string, err err
 	return cmd, err
 }
 
-func genSystemUninstallCmd(manager InstallMethod, pkg string) (string, error) {
-	panic("not implemented yet")
-	cmd := pkg
+func genSystemUninstallCmd(manager InstallMethod, pkg string) (cmd string, err error) {
+	cmd, err = "", nil
+
+	switch manager {
+
+	case INVALID:
+		err = couldntFindSysPkgManagerErr
+	default:
+		err = notSystemPkgManagerErr
+
+	case Pacman:
+		cmd, err = uninstallWithPacmanCmd(pkg)
+	case Apt:
+		cmd, err = uninstallWithAptCmd(pkg)
+	case Dnf:
+		cmd, err = uninstallWithDnfCmd(pkg)
+	case Brew:
+		cmd, err = uninstallWithBrewCmd(pkg)
+
+	}
+
 	return cmd, nil
 }
 
@@ -385,8 +403,26 @@ func genAurInstallCmd(manager InstallMethod, pkg string) (cmd string, err error)
 	return cmd, err
 }
 
-func genAurUninstallCmd(manager InstallMethod, pkg string) (string, error) {
-	panic("not implemented yet")
-	cmd := pkg
-	return cmd, nil
+func genAurUninstallCmd(manager InstallMethod, pkg string) (cmd string, err error) {
+	cmd, err = "", nil
+
+	switch manager {
+
+	case INVALID:
+		err = couldntFindAurPkgManagerErr
+	default:
+		err = notAurPkgManagerErr
+
+	case Yay:
+		cmd, err = uninstallWithYayCmd(pkg)
+	case Paru:
+		cmd, err = uninstallWithParuCmd(pkg)
+	case Pacaur:
+		cmd, err = uninstallWithPacaurCmd(pkg)
+	case Aurman:
+		cmd, err = uninstallWithAurmanCmd(pkg)
+
+	}
+
+	return cmd, err
 }
