@@ -35,10 +35,10 @@ func FindAurPkgManager() {
 	pkgManager := INVALID
 
 	Logger.Info("Looking for aur package manager...")
-	if cmdAvailable(Yay) {
-		pkgManager = Yay
-	} else if cmdAvailable(Paru) {
+	if cmdAvailable(Paru) {
 		pkgManager = Paru
+	} else if cmdAvailable(Yay) {
+		pkgManager = Yay
 	} else if cmdAvailable(Pacaur) {
 		pkgManager = Pacaur
 	} else if cmdAvailable(Aurman) {
