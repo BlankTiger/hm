@@ -276,13 +276,11 @@ func uninstallWithYayCmd(pkg string) (string, error) {
 }
 
 func installWithParuCmd(pkg string) (string, error) {
-	// TODO: verify
-	cmd := "paru -S " + pkg
+	cmd := "paru -S --sudoloop " + pkg
 	return cmd, nil
 }
 
 func uninstallWithParuCmd(pkg string) (string, error) {
-	// TODO: verify
 	cmd := "paru -R " + pkg
 	return cmd, nil
 }
