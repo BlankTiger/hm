@@ -50,16 +50,24 @@ func cmdAvailable(cmd InstallMethod, args []string) bool {
 type InstallMethod string
 
 const (
-	System        InstallMethod = "system"
-	Apt           InstallMethod = "apt"
-	Pacman        InstallMethod = "pacman"
-	Dnf           InstallMethod = "dnf"
-	Brew          InstallMethod = "brew"
-	Aur           InstallMethod = "aur"
+	System InstallMethod = "system"
+	Apt    InstallMethod = "apt"
+	Pacman InstallMethod = "pacman"
+	Dnf    InstallMethod = "dnf"
+	Brew   InstallMethod = "brew"
+
+	Aur    InstallMethod = "aur"
+	Yay    InstallMethod = "yay"
+	Paru   InstallMethod = "paru"
+	Pacaur InstallMethod = "pacaur"
+	Aurman InstallMethod = "aurman"
+
 	Cargo         InstallMethod = "cargo"
 	CargoBinstall InstallMethod = "cargo-binstall"
-	Bash          InstallMethod = "bash"
-	INVALID       InstallMethod = ""
+
+	Bash InstallMethod = "bash"
+
+	INVALID InstallMethod = ""
 )
 
 func (i *InstallMethod) IsEmpty() bool {
@@ -68,8 +76,14 @@ func (i *InstallMethod) IsEmpty() bool {
 
 func IsValidInstallationMethod(method string) bool {
 	switch method {
-	case string(Apt), string(Pacman), string(Dnf), string(Brew), string(Aur), string(Cargo), string(System), string(Bash), string(CargoBinstall):
+
+	case string(System), string(Apt), string(Pacman), string(Dnf), string(Brew):
 		return true
+	case string(Aur), string(Yay), string(Paru), string(Pacaur), string(Aurman):
+		return true
+	case string(Cargo), string(CargoBinstall), string(Bash):
+		return true
+
 	case string(INVALID):
 		return false
 	default:

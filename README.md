@@ -101,6 +101,10 @@ Available methods are:
 - `dnf`
 - `brew`
 - `aur`
+- `yay`
+- `paru`
+- `pacaur`
+- `aurman`
 - `cargo`
 - `cargo-binstall`
 - `bash`, this executes what you write directly after the `:`. This method doesn't provide automatic uninstall instruction generation, which means that you will not be able to use `--uninstall` to remove a package installed this way.
