@@ -220,7 +220,7 @@ func main() {
 	}
 
 	if *install || *onlyInstall || *upgrade {
-		if globalDepsChanged || !globalDepsInstalled {
+		if globalDepsChanged || !globalDepsInstalled || *upgrade {
 			err = lib.InstallGlobalDependencies(&lockfile.GlobalDependencies)
 			if err != nil {
 				lib.Logger.Error("something went wrong while trying to install global dependencies", "err", err)

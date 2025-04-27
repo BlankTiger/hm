@@ -155,16 +155,21 @@ hm --dbg
 ## How It Works
 
 1. `hm` scans the source directory for configuration folders
-2. For each configuration, it:
+2. Parses `config/DEPENDENCIES` file (if exists) for instructions
+   and executes them
+3. For each configuration, it:
    - Copies or symlinks the files to the target location
    - Parses `INSTALL` and `DEPENDENCIES` files if present
    - Installs packages and dependencies when requested
-3. Tracks all activities in a lockfile (`hmlock.json`)
-4. Generates a diff file (`hmlock_diff.json`) to show changes
+4. Tracks all activities in a lockfile (`hmlock.json`)
+5. Generates a diff file (`hmlock_diff.json`) to show changes
 
 ## Notes
 
-1. While `hm` supports installing software, it doesn't install tools needed for the installation process itself. For example, `hm` won't install `cargo-binstall` automatically.
+1. While `hm` supports installing software, it doesn't install tools needed for
+   the installation process itself. For example, `hm` won't install
+   `cargo-binstall` automatically. To do that the recommended way is to put
+   `system:cargo-binstall` instruction in the `config/DEPENDENCIES` file.
 2. If installation fails for any package, `hm` will continue processing other configurations.
 3. Hidden directories (starting with a dot) are not managed by `hm`.
 4. The `.git` directory is always ignored.
