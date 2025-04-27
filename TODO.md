@@ -16,6 +16,7 @@ Bugs:
 
 TODO:
 
+- probably a good idea to parse all lines in INSTALL and execute them one by one until one succeeds
 has to depend on the lockfile (we have to store information on how the package was installed)
 - move functionality from the main loop to lib.go
 - lockfile, need to probably implement some kind of hashing to not overwrite files if there are some
