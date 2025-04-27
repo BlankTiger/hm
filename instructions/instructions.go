@@ -7,20 +7,21 @@ import (
 	"os/exec"
 )
 
-var systemPkgManager = INVALID
 var Logger *slog.Logger = nil
+
+var systemPkgManager = INVALID
 
 func FindSystemPkgManager() {
 	pkgManager := INVALID
 
 	Logger.Info("Looking for system package manager...")
-	if cmdAvailable(Apt, []string{"-v"}) {
+	if cmdAvailable(Apt) {
 		pkgManager = Apt
-	} else if cmdAvailable(Pacman, []string{"--version"}) {
+	} else if cmdAvailable(Pacman) {
 		pkgManager = Pacman
-	} else if cmdAvailable(Dnf, []string{"-version"}) {
+	} else if cmdAvailable(Dnf) {
 		pkgManager = Dnf
-	} else if cmdAvailable(Brew, []string{"--version"}) {
+	} else if cmdAvailable(Brew) {
 		pkgManager = Brew
 	}
 	Logger.Info("Result of search for the system package manager", "found", pkgManager)
@@ -28,11 +29,29 @@ func FindSystemPkgManager() {
 	systemPkgManager = pkgManager
 }
 
-// TODO: implement
-// func findAurPkgManager() InstallMethod {}
+var aurPkgManager = INVALID
 
-func cmdAvailable(cmd InstallMethod, args []string) bool {
-	command := exec.Command(string(cmd), args...)
+func FindAurPkgManager() {
+	pkgManager := INVALID
+
+	// TODO: find out if these commands will be correct (version options)
+	Logger.Info("Looking for aur package manager...")
+	if cmdAvailable(Yay) {
+		pkgManager = Yay
+	} else if cmdAvailable(Paru) {
+		pkgManager = Paru
+	} else if cmdAvailable(Pacaur) {
+		pkgManager = Pacaur
+	} else if cmdAvailable(Aurman) {
+		pkgManager = Aurman
+	}
+	Logger.Info("Result of search for the aur package manager", "found", pkgManager)
+
+	aurPkgManager = pkgManager
+}
+
+func cmdAvailable(cmd InstallMethod) bool {
+	command := exec.Command("which", string(cmd))
 	err := command.Run()
 	Logger.Debug("error finding cmd", "cmd", cmd, "err", err)
 
