@@ -76,10 +76,12 @@ $HOME/.config/homecfg/
     ├── fish/                 # Fish shell configuration
     │   ├── config.fish
     │   ├── INSTALL           # Installation instructions
+    │   ├── UNINSTALL         # Uninstallation instructions
     │   └── DEPENDENCIES      # Required dependencies
     ├── nvim/
     │   ├── init.lua
     │   └── INSTALL
+    │   ├── UNINSTALL
     └── .tmux/                # Hidden dirs are skipped (notice the dot)
         └── tmux.conf
 ```
@@ -116,7 +118,9 @@ An example using bash could be:
 bash:curl -fsSL https://example.com/install.sh | bash
 ```
 
-The `system` method is particularly powerful as it dynamically detects your operating system package manager and uses the appropriate installation command. For example:
+The `system` method is particularly powerful as it dynamically detects your
+operating system package manager and uses the appropriate installation command.
+For example:
 
 - On Debian/Ubuntu systems, it will use `apt`
 - On Arch Linux, it will use `pacman`
@@ -125,7 +129,15 @@ The `system` method is particularly powerful as it dynamically detects your oper
 
 This makes your configuration files more portable across different systems.
 
-Similar thing is implemented for the `aur` method. It will try to find the aur package manager that is installed.
+Similar thing is implemented for the `aur` method. It will try to find the aur
+package manager that is installed.
+
+### UNINSTALL
+
+The `UNINSTALL` file is treated as a bash script. When `INSTALL` contains
+packages installed via methods other than `bash`, then this file is redundant,
+otherwise you can uninstall the package installed with `bash` method by
+specyfing how to do that in this file.
 
 ### DEPENDENCIES
 
@@ -139,7 +151,10 @@ system:git
 
 ### config/DEPENDENCIES
 
-The `config/DEPENDENCIES` file is structurally the same as all the other `DEPENDENCIES` files in individual config directories. Packages specified in this file are installed regardless of managed configs before executing `INSTALL` instructions for individual configs.
+The `config/DEPENDENCIES` file is structurally the same as all the other
+`DEPENDENCIES` files in individual config directories. Packages specified in
+this file are installed regardless of managed configs before executing
+`INSTALL` instructions for individual configs.
 
 
 ## Advanced Usage
