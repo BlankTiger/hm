@@ -190,9 +190,19 @@ func main() {
 		}
 	}
 
+	// config/DEPENDENCIES file parsing
+	globalDependencies, err := lib.ParseGlobalDependencies(dirPath)
+	if err != nil {
+		logger.Error("couldn't parse global dependencies file", "path", dirPath, "err", err)
+		return
+	}
+	lockfile.GlobalDependencies = globalDependencies
+	globalDepsChanged := lib.DidGlobalDependenciesChange(&lockfile.GlobalDependencies, &lockfileBefore.GlobalDependencies)
+	globalDepsInstalled := lib.WereGlobalDependenciesInstalled(&lockfileBefore.GlobalDependencies)
+
 	// previously installed/uninstalled global dependencies pointing to idx in the lockfileBefore, so that the information can be copied
-	previouslyInstalledGlobal := make(map[string]int)
 	{
+		previouslyInstalledGlobal := make(map[string]int)
 		for idx, dep := range lockfileBefore.GlobalDependencies {
 			if dep.InstallInfo.IsInstalled || dep.InstallInfo.WasUninstalled {
 				previouslyInstalledGlobal[dep.Instruction.Pkg] = idx
@@ -209,18 +219,9 @@ func main() {
 
 	}
 
-	// config/DEPENDENCIES file parsing
-	globalDependencies, err := lib.ParseGlobalDependencies(dirPath)
-	globalDepsChanged := lib.DidGlobalDependenciesChange(&globalDependencies, &lockfileBefore.GlobalDependencies)
-	globalDepsInstalled := lib.WereGlobalDependenciesInstalled(&lockfileBefore.GlobalDependencies)
-	if err != nil {
-		logger.Error("couldn't parse global dependencies file", "path", dirPath, "err", err)
-		return
-	}
-
 	if *install || *onlyInstall || *upgrade {
 		if globalDepsChanged || !globalDepsInstalled {
-			err = lib.InstallGlobalDependencies(&globalDependencies)
+			err = lib.InstallGlobalDependencies(&lockfile.GlobalDependencies)
 			if err != nil {
 				lib.Logger.Error("something went wrong while trying to install global dependencies", "err", err)
 				return
@@ -228,7 +229,6 @@ func main() {
 		} else {
 			lib.Logger.Info("global dependencies didn't change since last installation, not installing", "depsChanged", globalDepsChanged, "previouslyInstalled", globalDepsInstalled)
 		}
-		lockfile.GlobalDependencies = globalDependencies
 		for idx, cfg := range lockfile.Configs {
 			if _, ok := previouslyInstalled[cfg.Name]; ok {
 				instInfo := &cfg.InstallInfo

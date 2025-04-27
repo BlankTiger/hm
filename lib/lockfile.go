@@ -17,12 +17,11 @@ const (
 )
 
 type lockfile struct {
-	Version                     string             `json:"version"`
-	Mode                        Mode               `json:"mode"`
-	GlobalDependencies          []globalDependency `json:"globalDependencies"`
-	GlobalDependenciesInstalled bool               `json:"globalDependenciesInstalled"`
-	Configs                     []config           `json:"configs"`
-	SkippedConfigs              []config           `json:"skippedConfigs"`
+	Version            string             `json:"version"`
+	Mode               Mode               `json:"mode"`
+	GlobalDependencies []globalDependency `json:"globalDependencies"`
+	Configs            []config           `json:"configs"`
+	SkippedConfigs     []config           `json:"skippedConfigs"`
 }
 
 type globalDependency struct {
