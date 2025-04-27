@@ -1,6 +1,7 @@
 package main
 
 import (
+	"blanktiger/hm/instructions"
 	"blanktiger/hm/lib"
 	"flag"
 	"log/slog"
@@ -36,9 +37,17 @@ func main() {
 	flag.Parse()
 
 	defaultIndent := "    "
+	var level = slog.LevelInfo
+	var opts = slog.HandlerOptions{Level: &level}
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &opts))
+	lib.Logger = logger
+	instructions.Logger = logger
+	// TODO: make this better, if this gets commented out, then we won't ever
+	// find the system package manager
+	instructions.FindSystemPkgManager()
 	if *debug {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
-		lib.Level = slog.LevelDebug
+		level = slog.LevelDebug
 	}
 
 	// show flag information
