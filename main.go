@@ -188,7 +188,15 @@ func main() {
 		}
 	}
 
+	// config/DEPENDENCIES file parsing
+	globalDependencies, err := lib.ParseGlobalDependencies(dirPath)
+	if err != nil {
+		logger.Error("couldn't parse global dependencies file", "path", dirPath, "err", err)
+		return
+	}
+
 	if *install || *onlyInstall || *upgrade {
+		lib.InstallGlobalDependencies(globalDependencies)
 		for idx, cfg := range lockfile.Configs {
 			if _, ok := previouslyInstalled[cfg.Name]; ok {
 				instInfo := &cfg.InstallInfo

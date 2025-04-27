@@ -19,6 +19,15 @@ const (
 	DEPENDENCIES_PATH_POSTFIX = "/DEPENDENCIES"
 )
 
+func ParseGlobalDependencies(path string) (res []installInstruction, err error) {
+	return parseDependencies(path)
+}
+
+func InstallGlobalDependencies(dependencies []installInstruction) error {
+	Logger.Info("installing global dependencies")
+	return installDependencies(dependencies)
+}
+
 func ParseRequirements(path string) (res *requirements, err error) {
 	Logger.Debug("parsing requirements", "path", path)
 	res = &requirements{}
@@ -55,11 +64,9 @@ func Install(cfg config) (res *installInfo, err error) {
 
 	// first install the dependencies if any
 	{
-		for _, depInst := range cfg.Requirements.Dependencies {
-			_, err := install(depInst)
-			if err != nil {
-				return res, err
-			}
+		err = installDependencies(cfg.Requirements.Dependencies)
+		if err != nil {
+			return res, err
 		}
 		res.DependenciesInstalled = true
 	}
@@ -81,6 +88,16 @@ func Install(cfg config) (res *installInfo, err error) {
 		res.UninstallTime = ""
 	}
 	return res, err
+}
+
+func installDependencies(dependencies []installInstruction) error {
+	for _, dep := range dependencies {
+		_, err := install(dep)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func install(inst installInstruction) (cmd string, err error) {
