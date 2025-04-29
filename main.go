@@ -97,9 +97,9 @@ func _main(c *conf.Configuration) error {
 	}
 
 	// config/DEPENDENCIES file parsing
-	globalDependencies, err := lib.ParseGlobalDependencies(dirPath)
+	globalDependencies, err := lib.ParseGlobalDependencies(c.SourceCfgDir)
 	if err != nil {
-		c.Logger.Error("couldn't parse global dependencies file", "path", dirPath, "err", err)
+		c.Logger.Error("couldn't parse global dependencies file", "path", c.SourceCfgDir, "err", err)
 		return err
 	}
 	lockfile.GlobalDependencies = globalDependencies
@@ -150,7 +150,7 @@ func _main(c *conf.Configuration) error {
 				}
 			}
 
-			if len(pkgs) > 0 && !slices.Contains(pkgs, cfg.Name) {
+			if len(c.Pkgs) > 0 && !slices.Contains(c.Pkgs, cfg.Name) {
 				lib.Logger.Debug("skipping config for installation, because it wasnt in the provided list", "skipped", cfg.Name)
 				continue
 			}
@@ -178,7 +178,7 @@ func _main(c *conf.Configuration) error {
 			}
 			cfg := lockfile.SkippedConfigs[idx]
 
-			if len(pkgs) > 0 && !slices.Contains(pkgs, cfg.Name) {
+			if len(c.Pkgs) > 0 && !slices.Contains(c.Pkgs, cfg.Name) {
 				lib.Logger.Debug("skipping config for uninstallation, because it wasnt in the provided list", "skipped", cfg.Name)
 				continue
 			}
@@ -193,12 +193,12 @@ func _main(c *conf.Configuration) error {
 	}
 
 	{
-		err := lockDiff.Save(lockfileDiffPath, c.DefaultIndent)
+		err := lockDiff.Save(c.LockfileDiffPath, c.DefaultIndent)
 		if err != nil {
 			lib.Logger.Error("something went wrong while trying to save lockfile diff to a file", "err", err)
 			return err
 		}
-		lib.Logger.Info("saved lockfile diff to a file", "path", lockfileDiffPath)
+		lib.Logger.Info("saved lockfile diff to a file", "path", c.LockfileDiffPath)
 
 		lib.Logger.Info("removing configs that are no longer in the source")
 		err = lib.RemoveConfigsFromTarget(lockDiff.RemovedConfigs)

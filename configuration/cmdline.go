@@ -22,6 +22,7 @@ type Configuration struct {
 	TargetDir     string
 
 	Pkgs             []string
+	SourceCfgDir     string
 	LockfilePath     string
 	LockfileDiffPath string
 	HomeDir          string
@@ -111,6 +112,7 @@ func Parse() Configuration {
 		TargetDir:     *targetdir,
 
 		Pkgs:             pkgs,
+		SourceCfgDir:     *sourcedir + "/config",
 		LockfilePath:     *targetdir + "/hmlock.json",
 		LockfileDiffPath: *targetdir + "/hmlock_diff.json",
 		HomeDir:          homeDir,
