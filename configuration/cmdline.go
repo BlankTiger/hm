@@ -1,29 +1,32 @@
 package configuration
 
 import (
-	"blanktiger/hm/lib"
 	"flag"
 	"log/slog"
 	"os"
+	"strings"
 	// "reflect"
 )
 
 type Configuration struct {
 	// flags
-	CopyMode      bool   `help:""`
-	Debug         bool   `help:""`
-	Install       bool   `help:""`
-	OnlyInstall   bool   `help:""`
-	Uninstall     bool   `help:""`
-	OnlyUninstall bool   `help:""`
-	Upgrade       bool   `help:""`
-	PkgsTxt       string `help:""`
-	SourceDir     string `help:""`
-	TargetDir     string `help:""`
+	CopyMode      bool
+	Debug         bool
+	Install       bool
+	OnlyInstall   bool
+	Uninstall     bool
+	OnlyUninstall bool
+	Upgrade       bool
+	PkgsTxt       string
+	SourceDir     string
+	TargetDir     string
 
-	HomeDir       string
-	Logger        *slog.Logger
-	DefaultIndent string
+	Pkgs             []string
+	LockfilePath     string
+	LockfileDiffPath string
+	HomeDir          string
+	Logger           *slog.Logger
+	DefaultIndent    string
 }
 
 func (c *Configuration) Display() {
@@ -41,13 +44,19 @@ func (c *Configuration) Display() {
 }
 
 func (c *Configuration) AssertCorrectness() {
-	lib.Assert((c.OnlyInstall && c.OnlyUninstall) == false, "cannot pass both --only-install and --only-uninstall")
-	lib.Assert((c.Install && c.OnlyUninstall) == false, "cannot pass both --install and --only-uninstall")
-	lib.Assert((c.OnlyInstall && c.Uninstall) == false, "cannot pass both --only-install and --uninstall")
-	lib.Assert((c.Install && c.Upgrade) == false, "cannot pass both --install and --upgrade flags")
-	lib.Assert((c.OnlyInstall && c.Upgrade) == false, "cannot pass both --only-install and --upgrade flags")
-	lib.Assert((c.Uninstall && c.Upgrade) == false, "cannot pass both --uninstall and --upgrade flags")
-	lib.Assert((c.OnlyUninstall && c.Upgrade) == false, "cannot pass both --only-uninstall and --upgrade flags")
+	assert((c.OnlyInstall && c.OnlyUninstall) == false, "cannot pass both --only-install and --only-uninstall")
+	assert((c.Install && c.OnlyUninstall) == false, "cannot pass both --install and --only-uninstall")
+	assert((c.OnlyInstall && c.Uninstall) == false, "cannot pass both --only-install and --uninstall")
+	assert((c.Install && c.Upgrade) == false, "cannot pass both --install and --upgrade flags")
+	assert((c.OnlyInstall && c.Upgrade) == false, "cannot pass both --only-install and --upgrade flags")
+	assert((c.Uninstall && c.Upgrade) == false, "cannot pass both --uninstall and --upgrade flags")
+	assert((c.OnlyUninstall && c.Upgrade) == false, "cannot pass both --only-uninstall and --upgrade flags")
+}
+
+func assert(condition bool, message string) {
+	if !condition {
+		panic(message)
+	}
 }
 
 func Parse() Configuration {
@@ -79,10 +88,14 @@ func Parse() Configuration {
 	var level = slog.LevelInfo
 	var opts = slog.HandlerOptions{Level: &level}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &opts))
-	lib.Logger = logger
 	if *debug {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 		level = slog.LevelDebug
+	}
+
+	pkgs := []string{}
+	if *pkgsTxt != "" {
+		pkgs = strings.Split(*pkgsTxt, ",")
 	}
 
 	return Configuration{
@@ -97,8 +110,11 @@ func Parse() Configuration {
 		SourceDir:     *sourcedir,
 		TargetDir:     *targetdir,
 
-		HomeDir:       homeDir,
-		Logger:        logger,
-		DefaultIndent: defaultIndent,
+		Pkgs:             pkgs,
+		LockfilePath:     *targetdir + "/hmlock.json",
+		LockfileDiffPath: *targetdir + "/hmlock_diff.json",
+		HomeDir:          homeDir,
+		Logger:           logger,
+		DefaultIndent:    defaultIndent,
 	}
 }
