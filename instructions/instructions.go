@@ -11,6 +11,12 @@ var Logger *slog.Logger = nil
 
 var systemPkgManager = INVALID
 
+func Init(l *slog.Logger) {
+	Logger = l
+	FindSystemPkgManager()
+	FindAurPkgManager()
+}
+
 func FindSystemPkgManager() {
 	pkgManager := INVALID
 

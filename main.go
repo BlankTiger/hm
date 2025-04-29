@@ -4,7 +4,6 @@ import (
 	conf "blanktiger/hm/configuration"
 	"blanktiger/hm/instructions"
 	"blanktiger/hm/lib"
-	"log/slog"
 	"os"
 	"slices"
 	"strings"
@@ -15,20 +14,12 @@ func main() {
 	c.Display()
 	c.AssertCorrectness()
 
-	initInstructions(c.Logger)
+	instructions.Init(c.Logger)
 	err := _main(&c)
 	if err != nil {
 		c.Logger.Error("program exited with an error", "error", err)
 		os.Exit(1)
 	}
-}
-
-func initInstructions(logger *slog.Logger) {
-	instructions.Logger = logger
-	// TODO: make this better, if this gets commented out, then we won't ever
-	// find the system package manager
-	instructions.FindSystemPkgManager()
-	instructions.FindAurPkgManager()
 }
 
 func _main(c *conf.Configuration) error {
