@@ -1,137 +1,47 @@
 package main
 
 import (
+	conf "blanktiger/hm/configuration"
 	"blanktiger/hm/instructions"
 	"blanktiger/hm/lib"
-	"flag"
 	"log/slog"
 	"os"
 	"slices"
 	"strings"
 )
 
-var homeDir = os.Getenv("HOME")
-
-type configuration struct {
-	// flags
-	copyMode      bool
-	debug         bool
-	install       bool
-	onlyInstall   bool
-	uninstall     bool
-	onlyUninstall bool
-	upgrade       bool
-	pkgsTxt       string
-	sourceDir     string
-	targetDir     string
-
-	logger        *slog.Logger
-	defaultIndent string
-}
-
-func (c *configuration) display() {
-	cli_args := "cli args"
-	c.logger.Debug(cli_args, "copy", c.copyMode)
-	c.logger.Debug(cli_args, "dbg", c.debug)
-	c.logger.Debug(cli_args, "install", c.install)
-	c.logger.Debug(cli_args, "only-install", c.onlyInstall)
-	c.logger.Debug(cli_args, "uninstall", c.uninstall)
-	c.logger.Debug(cli_args, "only-uninstall", c.onlyUninstall)
-	c.logger.Debug(cli_args, "upgrade", c.upgrade)
-	c.logger.Debug(cli_args, "pkgs", c.pkgsTxt)
-	c.logger.Debug(cli_args, "sourcedir", c.sourceDir)
-	c.logger.Debug(cli_args, "targetdir", c.targetDir)
-}
-
-func (c *configuration) assertCorrectness() {
-	lib.Assert((c.onlyInstall && c.onlyUninstall) == false, "cannot pass both --only-install and --only-uninstall")
-	lib.Assert((c.install && c.onlyUninstall) == false, "cannot pass both --install and --only-uninstall")
-	lib.Assert((c.onlyInstall && c.uninstall) == false, "cannot pass both --only-install and --uninstall")
-	lib.Assert((c.install && c.upgrade) == false, "cannot pass both --install and --upgrade flags")
-	lib.Assert((c.onlyInstall && c.upgrade) == false, "cannot pass both --only-install and --upgrade flags")
-	lib.Assert((c.uninstall && c.upgrade) == false, "cannot pass both --uninstall and --upgrade flags")
-	lib.Assert((c.onlyUninstall && c.upgrade) == false, "cannot pass both --only-uninstall and --upgrade flags")
-
-}
-
 func main() {
-	c := parseConfigurationFromArgs()
-	c.display()
-	c.assertCorrectness()
+	c := conf.Parse()
+	c.Display()
+	c.AssertCorrectness()
 
+	initInstructions(c.Logger)
 	err := _main(&c)
 	if err != nil {
-		c.logger.Error("program exited with an error", "error", err)
+		c.Logger.Error("program exited with an error", "error", err)
 		os.Exit(1)
 	}
 }
 
-func parseConfigurationFromArgs() configuration {
-	copyMode := flag.Bool("copy", false, "copies the config files instead of symlinking them")
-	debug := flag.Bool("dbg", false, "set logging level to debug")
-
-	// TODO: think if this is something that should be done at all times, or not
-	// saveLockDiff := flag.Bool("save-diff", false, "wheter to save lockfile diff from before and after to a file regardless of the --debug flag")
-
-	install := flag.Bool("install", false, "whether to install packages using INSTALL instructions found in config folders")
-	onlyInstall := flag.Bool("only-install", false, "doesnt copy configs over, only installs the packages that would be copied over based on their INSTALL instructions, --install can be omitted if this option is used")
-
-	uninstall := flag.Bool("uninstall", false, "whether to uninstall packages using INSTALL instructions found in config folders")
-	onlyUninstall := flag.Bool("only-uninstall", false, "doesnt copy configs over, only uninstalls the packages for configs that would be removed based on their instructions, --uninstall can be omitted if this option is used")
-
-	upgrade := flag.Bool("upgrade", false, "whether to upgrade already installed packages, for now simply reruns the original install instruction")
-
-	pkgsTxt := flag.String("pkgs", "", "installs/uninstalls only the packages specified by this argument, empty means work on all active, non-hidden configs, example: --pkgs fish,ghostty")
-
-	sourcedir := flag.String("sourcedir", homeDir+"/.config/homecfg", "source of configuration files, without the trailing /")
-	// TODO: UNCOMMENT AFTER FINISHING TESTING
-	// targetDirDefault := homeDir + "/.config"
-	targetDirDefault := homeDir + "/.configbkp"
-	targetdir := flag.String("targetdir", targetDirDefault, "target for symlinks for debugging, without the trailing /")
-	flag.Parse()
-
-	defaultIndent := "    "
-	var level = slog.LevelInfo
-	var opts = slog.HandlerOptions{Level: &level}
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &opts))
-	lib.Logger = logger
+func initInstructions(logger *slog.Logger) {
 	instructions.Logger = logger
 	// TODO: make this better, if this gets commented out, then we won't ever
 	// find the system package manager
 	instructions.FindSystemPkgManager()
 	instructions.FindAurPkgManager()
-	if *debug {
-		slog.SetLogLoggerLevel(slog.LevelDebug)
-		level = slog.LevelDebug
-	}
-
-	return configuration{
-		copyMode:      *copyMode,
-		debug:         *debug,
-		install:       *install,
-		onlyInstall:   *onlyInstall,
-		uninstall:     *uninstall,
-		onlyUninstall: *onlyUninstall,
-		upgrade:       *upgrade,
-		pkgsTxt:       *pkgsTxt,
-		sourceDir:     *sourcedir,
-		targetDir:     *targetdir,
-
-		logger:        logger,
-		defaultIndent: defaultIndent,
-	}
 }
 
-func _main(c *configuration) error {
-	dirPath := c.sourceDir + "/config"
+func _main(c *conf.Configuration) error {
+
+	dirPath := c.SourceDir + "/config"
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		lib.Logger.Error("couldn't read dir", "err", err)
 		return err
 	}
 
-	lockfilePath := c.targetDir + "/hmlock.json"
-	lockfileDiffPath := c.targetDir + "/hmlock_diff.json"
+	lockfilePath := c.TargetDir + "/hmlock.json"
+	lockfileDiffPath := c.TargetDir + "/hmlock_diff.json"
 	lockfile, err := lib.ReadOrCreateLockfile(lockfilePath)
 	if err != nil {
 		lib.Logger.Error("something went wrong while parsing the lockfile, you might need to remove it manually (possibly was generated by previous version of `hm`", "err", err)
@@ -139,7 +49,7 @@ func _main(c *configuration) error {
 	}
 	lockfileBefore := *lockfile
 	defer func() {
-		err := lockfile.Save(lockfilePath, c.defaultIndent)
+		err := lockfile.Save(lockfilePath, c.DefaultIndent)
 		if err != nil {
 			lib.Logger.Error("something went wrong while trying to save the lockfile", "err", err)
 			return
@@ -149,7 +59,7 @@ func _main(c *configuration) error {
 	// TODO: think if this is correct, for now just reset
 	*lockfile = lib.DefaultLockfile
 
-	if c.copyMode {
+	if c.CopyMode {
 		lib.Logger.Debug("setting mode to cpy")
 		lockfile.Mode = lib.Cpy
 	} else {
@@ -168,14 +78,14 @@ func _main(c *configuration) error {
 		}
 
 		from := dirPath + "/" + name
-		to := c.targetDir + "/" + name
+		to := c.TargetDir + "/" + name
 
 		if name[0] == '.' {
 			lib.Logger.Info("configs", "skipping", name)
 			// skipping the dot
 			nameIfNotSkipped := name[1:]
 			fromIfNotSkipped := dirPath + "/" + nameIfNotSkipped
-			toIfNotSkipped := c.targetDir + "/" + nameIfNotSkipped
+			toIfNotSkipped := c.TargetDir + "/" + nameIfNotSkipped
 			config := lib.NewConfig(nameIfNotSkipped, fromIfNotSkipped, toIfNotSkipped, nil)
 			lockfile.AppendSkippedConfig(config)
 			continue
@@ -192,13 +102,13 @@ func _main(c *configuration) error {
 	}
 
 	pkgs := []string{}
-	if c.pkgsTxt != "" {
-		pkgs = strings.Split(c.pkgsTxt, ",")
+	if c.PkgsTxt != "" {
+		pkgs = strings.Split(c.PkgsTxt, ",")
 	}
 
-	if !c.onlyUninstall && !c.onlyInstall {
+	if !c.OnlyUninstall && !c.OnlyInstall {
 		for _, cfg := range lockfile.Configs {
-			if c.copyMode {
+			if c.CopyMode {
 				lib.Logger.Info("copying", "from", cfg.From, "to", cfg.To)
 				err := lib.Copy(cfg.From, cfg.To)
 				if err != nil {
@@ -239,7 +149,7 @@ func _main(c *configuration) error {
 	// config/DEPENDENCIES file parsing
 	globalDependencies, err := lib.ParseGlobalDependencies(dirPath)
 	if err != nil {
-		c.logger.Error("couldn't parse global dependencies file", "path", dirPath, "err", err)
+		c.Logger.Error("couldn't parse global dependencies file", "path", dirPath, "err", err)
 		return err
 	}
 	lockfile.GlobalDependencies = globalDependencies
@@ -265,8 +175,8 @@ func _main(c *configuration) error {
 
 	}
 
-	if c.install || c.onlyInstall || c.upgrade {
-		if globalDepsChanged || !globalDepsInstalled || c.upgrade {
+	if c.Install || c.OnlyInstall || c.Upgrade {
+		if globalDepsChanged || !globalDepsInstalled || c.Upgrade {
 			err = lib.InstallGlobalDependencies(&lockfile.GlobalDependencies)
 			if err != nil {
 				lib.Logger.Error("something went wrong while trying to install global dependencies", "err", err)
@@ -278,7 +188,7 @@ func _main(c *configuration) error {
 		for idx, cfg := range lockfile.Configs {
 			if _, ok := previouslyInstalled[cfg.Name]; ok {
 				instInfo := &cfg.InstallInfo
-				if instInfo.IsInstalled && c.upgrade {
+				if instInfo.IsInstalled && c.Upgrade {
 					lib.Logger.Info("upgrading an already installed pkg", "name", cfg.Name)
 				} else if instInfo.IsInstalled {
 					lib.Logger.Debug("skipping config for installation, because it is already installed, to upgrade pass the --upgrade flag", "name", cfg.Name)
@@ -309,7 +219,7 @@ func _main(c *configuration) error {
 		namesToIdx[cfg.Name] = idx
 	}
 	lockDiff := lockfileBefore.Diff(lockfile)
-	if c.uninstall || c.onlyUninstall {
+	if c.Uninstall || c.OnlyUninstall {
 		for _, _cfg := range lockDiff.NewlySkippedConfigs {
 			idx, ok := namesToIdx[_cfg.Name]
 			if !ok {
@@ -333,7 +243,7 @@ func _main(c *configuration) error {
 	}
 
 	{
-		err := lockDiff.Save(lockfileDiffPath, c.defaultIndent)
+		err := lockDiff.Save(lockfileDiffPath, c.DefaultIndent)
 		if err != nil {
 			lib.Logger.Error("something went wrong while trying to save lockfile diff to a file", "err", err)
 			return err
