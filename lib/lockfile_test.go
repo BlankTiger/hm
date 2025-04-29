@@ -4,4 +4,5 @@ import (
 	"testing"
 )
 
-func TestLockfileDiffing(t *testing.T) {}
+func TestLockfileDiffing(t *testing.T) {
+}
