@@ -22,12 +22,22 @@ type lockfile struct {
 	Mode               Mode               `json:"mode"`
 	GlobalDependencies []globalDependency `json:"globalDependencies"`
 	Configs            []config           `json:"configs"`
-	SkippedConfigs     []config           `json:"skippedConfigs"`
+	HiddenConfigs      []config           `json:"skippedConfigs"`
 }
 
 type globalDependency struct {
 	Instruction *installInstruction `json:"installInstruction"`
 	InstallInfo installInfo         `json:"installInfo"`
+}
+
+func ContainsGlobalDep(deps []globalDependency, dep globalDependency) bool {
+	for _, _dep := range deps {
+		// TODO: verify if this doesn't check pointer equality for Instuction (*installInstruction)
+		if _dep == dep {
+			return true
+		}
+	}
+	return false
 }
 
 func newGlobalDependency(inst *installInstruction) globalDependency {
@@ -72,7 +82,7 @@ func WereGlobalDependenciesInstalled(deps *[]globalDependency) bool {
 }
 
 func (l *lockfile) AppendSkippedConfig(config config) {
-	l.SkippedConfigs = append(l.SkippedConfigs, config)
+	l.HiddenConfigs = append(l.HiddenConfigs, config)
 }
 
 func newLockfile() lockfile {
@@ -80,7 +90,7 @@ func newLockfile() lockfile {
 		Version:            "0.1.0",
 		GlobalDependencies: []globalDependency{},
 		Configs:            []config{},
-		SkippedConfigs:     []config{},
+		HiddenConfigs:      []config{},
 	}
 }
 
@@ -134,16 +144,26 @@ func BaseLockfileCreation(c *configuration.Configuration) (*lockfile, error) {
 		lockfile.AddConfig(config)
 	}
 
+	if c.CopyMode {
+		Logger.Debug("setting mode to cpy")
+		lockfile.Mode = Cpy
+	} else {
+		Logger.Debug("setting mode to dev")
+		lockfile.Mode = Dev
+	}
+
 	return lockfile, nil
 }
 
 type lockfileDiff struct {
-	AddedConfigs             []config `json:"addedConfigs"`
-	RemovedConfigs           []config `json:"removedConfigs"`
-	NewlySkippedConfigs      []config `json:"newlySkippedConfigs"`
-	PreviouslySkippedConfigs []config `json:"previouslySkippedConfigs"`
-	ModeChanged              bool     `json:"modeChanged"`
-	VersionChanged           bool     `json:"versionChanged"`
+	AddedConfigs   []config `json:"addedConfigs"`
+	RemovedConfigs []config `json:"removedConfigs"`
+	// TODO: is this info necessary?
+	PreviouslyRemovedConfigs []config           `json:"previouslyRemovedConfigs"`
+	AddedGlobalDeps          []globalDependency `json:"addedGlobalDeps"`
+	RemovedGlobalDeps        []globalDependency `json:"removedGlobalDeps"`
+	ModeChanged              bool               `json:"modeChanged"`
+	VersionChanged           bool               `json:"versionChanged"`
 }
 
 func (d *lockfileDiff) Save(path, indent string) error {
@@ -170,44 +190,57 @@ func (d *lockfileDiff) Save(path, indent string) error {
 	return nil
 }
 
-// method should be called on an old version of the lockfile
-func (l *lockfile) Diff(newLockfile *lockfile) lockfileDiff {
-	// TODO: also diff global dependencies
+func diffLockfiles(lockBefore, lockAfter lockfile) lockfileDiff {
 	addedConfigs := []config{}
 	removedConfigs := []config{}
 	newlySkippedConfigs := []config{}
-	previouslySkippedConfigs := []config{}
+	previouslyRemovedConfigs := []config{}
+	addedGlobalDeps := []globalDependency{}
+	removedGlobalDeps := []globalDependency{}
 
-	for _, prevConf := range l.Configs {
-		if !ContainsConfig(newLockfile.Configs, prevConf) {
+	for _, prevConf := range lockBefore.Configs {
+		if !ContainsConfig(lockAfter.Configs, prevConf) {
 			removedConfigs = append(removedConfigs, prevConf)
 		}
 
-		if ContainsConfig(newLockfile.SkippedConfigs, prevConf) && !ContainsConfig(l.SkippedConfigs, prevConf) {
+		if ContainsConfig(lockAfter.HiddenConfigs, prevConf) && !ContainsConfig(lockBefore.HiddenConfigs, prevConf) {
 			newlySkippedConfigs = append(newlySkippedConfigs, prevConf)
 		}
 	}
 
-	for _, newConf := range newLockfile.Configs {
-		if !ContainsConfig(l.Configs, newConf) {
+	for _, newConf := range lockAfter.Configs {
+		if !ContainsConfig(lockBefore.Configs, newConf) {
 			addedConfigs = append(addedConfigs, newConf)
 		}
 
 	}
 
-	for _, prevSkippedConf := range l.SkippedConfigs {
-		if !ContainsConfig(newLockfile.SkippedConfigs, prevSkippedConf) {
-			previouslySkippedConfigs = append(previouslySkippedConfigs, prevSkippedConf)
+	for _, prevSkippedConf := range lockBefore.HiddenConfigs {
+		if !ContainsConfig(lockAfter.HiddenConfigs, prevSkippedConf) {
+			previouslyRemovedConfigs = append(previouslyRemovedConfigs, prevSkippedConf)
+		}
+	}
+
+	for _, prevGlobalDep := range lockBefore.GlobalDependencies {
+		if !ContainsGlobalDep(lockAfter.GlobalDependencies, prevGlobalDep) {
+			removedGlobalDeps = append(removedGlobalDeps, prevGlobalDep)
+		}
+	}
+
+	for _, newGlobalDep := range lockAfter.GlobalDependencies {
+		if !ContainsGlobalDep(lockBefore.GlobalDependencies, newGlobalDep) {
+			addedGlobalDeps = append(addedGlobalDeps, newGlobalDep)
 		}
 	}
 
 	return lockfileDiff{
 		AddedConfigs:             addedConfigs,
 		RemovedConfigs:           removedConfigs,
-		NewlySkippedConfigs:      newlySkippedConfigs,
-		PreviouslySkippedConfigs: previouslySkippedConfigs,
-		ModeChanged:              l.Mode != newLockfile.Mode,
-		VersionChanged:           l.Version != newLockfile.Version,
+		PreviouslyRemovedConfigs: previouslyRemovedConfigs,
+		AddedGlobalDeps:          addedGlobalDeps,
+		RemovedGlobalDeps:        removedGlobalDeps,
+		ModeChanged:              lockBefore.Mode != lockAfter.Mode,
+		VersionChanged:           lockBefore.Version != lockAfter.Version,
 	}
 }
 
