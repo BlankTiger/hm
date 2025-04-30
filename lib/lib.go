@@ -62,7 +62,7 @@ func installGlobalDependency(dep globalDependency) (info installInfo, err error)
 		info.InstallTime = now()
 		info.IsInstalled = true
 		info.WasUninstalled = false
-		info.UninstallInstruction = ""
+		info.UninstallInstructions = []string{}
 		info.UninstallTime = ""
 	}
 
@@ -92,41 +92,6 @@ func ParseRequirements(path string) (res *requirements, err error) {
 		res.Dependencies = dependencies
 	}
 
-	return res, err
-}
-
-func Install(cfg config) (res *installInfo, err error) {
-	res, err = &cfg.InstallInfo, nil
-
-	if cfg.Requirements.Install == nil {
-		Logger.Debug("not installing the pkg, because there was no INSTALL instructions", "pkg", cfg.Name)
-		return res, nil
-	}
-
-	// first install the dependencies if any
-	{
-		err = installDependencies(cfg.Requirements.Dependencies)
-		if err != nil {
-			return res, err
-		}
-		res.DependenciesInstalled = true
-	}
-
-	{
-		cmd, err := install(*cfg.Requirements.Install)
-		if err != nil {
-			return res, err
-		}
-		res.InstallInstruction = cmd
-	}
-
-	// info handling
-	{
-		res.InstallTime = now()
-		res.IsInstalled = true
-		res.WasUninstalled = false
-		res.UninstallTime = ""
-	}
 	return res, err
 }
 
@@ -180,37 +145,6 @@ func execute(cmd string) error {
 	return nil
 }
 
-func Uninstall(cfg config) (res *installInfo, err error) {
-	res, err = &cfg.InstallInfo, nil
-
-	defer runUninstallScriptIfItExists(cfg, res)
-
-	if cfg.Requirements.Install == nil {
-		Logger.Debug("not uninstalling the pkg, because there was no INSTALL instructions", "pkg", cfg.Name)
-		return res, nil
-	}
-
-	// TODO: think on how to correctly handle dependencies when uninstalling, for now dont
-	// remove them when uninstalling
-	{
-		cmd, err := uninstall(cfg.Requirements.Install)
-		if err != nil {
-			return res, err
-		}
-		res.UninstallInstruction = cmd
-	}
-
-	// info handling
-	{
-		res.InstallTime = ""
-		res.IsInstalled = false
-		res.WasUninstalled = true
-		now := time.Now().UTC().Format(time.DateTime)
-		res.UninstallTime = now
-	}
-	return res, err
-}
-
 func runUninstallScriptIfItExists(cfg config, info *installInfo) {
 	idx := strings.LastIndex(cfg.From, "/")
 	from := cfg.From
@@ -236,7 +170,7 @@ func runUninstallScriptIfItExists(cfg config, info *installInfo) {
 		info.DependenciesInstalled = false
 		info.InstallInstruction = ""
 		info.InstallTime = ""
-		info.UninstallInstruction = "bash " + path
+		info.UninstallInstructions = append(info.UninstallInstructions, "bash "+path)
 		info.WasUninstalled = true
 		info.UninstallTime = now()
 	}
@@ -262,18 +196,11 @@ func Assert(condition bool, message string) {
 	}
 }
 
-func RemoveConfigsFromTarget(configs []config) error {
-	for _, c := range configs {
-		Logger.Info("removing config from target", "target", c.To)
-		err := os.RemoveAll(c.To)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func removeCfg(from string) error {
+	return os.RemoveAll(from)
 }
 
-func Symlink(from, to string) error {
+func symlink(from, to string) error {
 	_, err := os.Stat(from)
 	if err != nil {
 		return err
@@ -300,7 +227,7 @@ func Symlink(from, to string) error {
 	return nil
 }
 
-func Copy(from, to string) error {
+func copyCfg(from, to string) error {
 	info, err := os.Stat(from)
 	if err != nil {
 		return err

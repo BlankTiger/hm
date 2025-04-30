@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 )
 
@@ -23,9 +24,22 @@ type installInfo struct {
 	InstallInstruction    string `json:"installInstruction"`
 	DependenciesInstalled bool   `json:"dependenciesInstalled"`
 
-	WasUninstalled       bool   `json:"wasUninstalled"`
-	UninstallTime        string `json:"uninstallTime"`
-	UninstallInstruction string `json:"uninstallInstruction"`
+	WasUninstalled        bool     `json:"wasUninstalled"`
+	UninstallTime         string   `json:"uninstallTime"`
+	UninstallInstructions []string `json:"uninstallInstructions"`
+}
+
+func (i *installInfo) Equal(o *installInfo) bool {
+	uninstInstructionsMatch := false
+	if i.UninstallInstructions != nil && o.UninstallInstructions != nil {
+		uninstInstructionsMatch = slices.Equal(i.UninstallInstructions, o.UninstallInstructions)
+	}
+	return uninstInstructionsMatch && i.IsInstalled == o.IsInstalled && i.InstallTime == o.InstallTime && i.InstallInstruction == o.InstallInstruction && i.DependenciesInstalled == o.DependenciesInstalled && i.WasUninstalled == o.WasUninstalled && i.UninstallTime == o.UninstallTime
+}
+
+// TODO: remove
+func newInstallInfo() installInfo {
+	return installInfo{}
 }
 
 func NewConfig(name, from, to string, reqs *requirements) config {
@@ -56,6 +70,9 @@ func ContainsConfig(configs []config, c config) bool {
 }
 
 type requirements struct {
+	// TODO: get rid of that Name in the definition of requirements
+	// instead we should just pass the config everywhere with all the data
+	// (probably)
 	Name         string               `json:"name"`
 	Install      *installInstruction  `json:"installInstructions"`
 	Dependencies []installInstruction `json:"dependencies"`

@@ -30,15 +30,22 @@ type globalDependency struct {
 	InstallInfo installInfo         `json:"installInfo"`
 }
 
+func (d *globalDependency) Equal(o *globalDependency) bool {
+	instMatch := false
+	if d.Instruction != nil && o.Instruction != nil {
+		instMatch = *d.Instruction == *o.Instruction
+	}
+
+	return instMatch && d.InstallInfo.Equal(&o.InstallInfo)
+}
+
 func ContainsGlobalDep(deps []globalDependency, dep globalDependency) bool {
-	return slices.Contains(deps, dep)
-	// for _, _dep := range deps {
-	// 	// TODO: verify if this doesn't check pointer equality for Instuction (*installInstruction)
-	// 	if _dep == dep {
-	// 		return true
-	// 	}
-	// }
-	// return false
+	for _, _dep := range deps {
+		if _dep.Equal(&dep) {
+			return true
+		}
+	}
+	return false
 }
 
 func newGlobalDependency(inst *installInstruction) globalDependency {
@@ -109,6 +116,14 @@ configs:
 			if cfgFrom.Name == to.HiddenConfigs[idx].Name {
 				to.HiddenConfigs[idx].InstallInfo = cfgFrom.InstallInfo
 				continue configs
+			}
+		}
+	}
+
+	for _, depFrom := range from.GlobalDependencies {
+		for idx := range to.GlobalDependencies {
+			if depFrom.Instruction.Pkg == to.GlobalDependencies[idx].Instruction.Pkg {
+				to.GlobalDependencies[idx].InstallInfo = depFrom.InstallInfo
 			}
 		}
 	}

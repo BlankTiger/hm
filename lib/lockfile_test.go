@@ -173,7 +173,7 @@ var commonGlobalDependency = globalDependency{
 		DependenciesInstalled: true,
 		WasUninstalled:        false,
 		UninstallTime:         "",
-		UninstallInstruction:  "",
+		UninstallInstructions: []string{},
 	},
 }
 
@@ -238,7 +238,7 @@ func TestUpdateLockfileInstallInfo(t *testing.T) {
 		DependenciesInstalled: false,
 		WasUninstalled:        false,
 		UninstallTime:         "",
-		UninstallInstruction:  "",
+		UninstallInstructions: []string{},
 	}
 	forUpdate := map[string]installInfo{commonCfg.Name: expectedInstallInfo}
 
@@ -262,7 +262,7 @@ func TestCopyInstallInfo(t *testing.T) {
 		DependenciesInstalled: true,
 		WasUninstalled:        false,
 		UninstallTime:         "",
-		UninstallInstruction:  "",
+		UninstallInstructions: []string{},
 	}
 	cfgB.InstallInfo = installInfo{
 		IsInstalled:           true,
@@ -271,7 +271,7 @@ func TestCopyInstallInfo(t *testing.T) {
 		DependenciesInstalled: true,
 		WasUninstalled:        false,
 		UninstallTime:         "",
-		UninstallInstruction:  "",
+		UninstallInstructions: []string{},
 	}
 	cfgC.InstallInfo = installInfo{
 		IsInstalled:           false,
@@ -280,7 +280,7 @@ func TestCopyInstallInfo(t *testing.T) {
 		DependenciesInstalled: false,
 		WasUninstalled:        true,
 		UninstallTime:         now(),
-		UninstallInstruction:  "C",
+		UninstallInstructions: []string{"C"},
 	}
 	lockFrom := lockfile{
 		Configs:       []config{cfgA, cfgB},
