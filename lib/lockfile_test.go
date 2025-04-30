@@ -31,7 +31,7 @@ func TestLockfileDiffingAddedConfigs(t *testing.T) {
 		Configs: []config{commonCfg, newCfg},
 	}
 
-	diff := diffLockfiles(lockBefore, lockAfter)
+	diff := DiffLocks(lockBefore, lockAfter)
 
 	expectedDiff := lockfileDiff{
 		AddedConfigs:             []config{newCfg},
@@ -53,7 +53,7 @@ func TestLockfileDiffRemovedConfigs(t *testing.T) {
 		Configs: []config{},
 	}
 
-	diff := diffLockfiles(lockBefore, lockAfter)
+	diff := DiffLocks(lockBefore, lockAfter)
 
 	expectedDiff := lockfileDiff{
 		AddedConfigs:             []config{},
@@ -75,7 +75,7 @@ func TestLockfileDiffPreviouslyRemovedConfigs(t *testing.T) {
 		Configs: []config{commonCfg},
 	}
 
-	diff := diffLockfiles(lockBefore, lockAfter)
+	diff := DiffLocks(lockBefore, lockAfter)
 
 	expectedDiff := lockfileDiff{
 		AddedConfigs:             []config{commonCfg},
@@ -100,8 +100,8 @@ func TestLockfileDiffModeChanged(t *testing.T) {
 		Mode: Cpy,
 	}
 
-	diffA := diffLockfiles(lockBefore, lockAfterA)
-	diffB := diffLockfiles(lockBefore, lockAfterB)
+	diffA := DiffLocks(lockBefore, lockAfterA)
+	diffB := DiffLocks(lockBefore, lockAfterB)
 
 	expectedDiffA := lockfileDiff{
 		AddedConfigs:             []config{},
@@ -136,8 +136,8 @@ func TestLockfileDiffVersionChanged(t *testing.T) {
 		Version: "0.2.0",
 	}
 
-	diffA := diffLockfiles(lockBefore, lockAfterA)
-	diffB := diffLockfiles(lockBefore, lockAfterB)
+	diffA := DiffLocks(lockBefore, lockAfterA)
+	diffB := DiffLocks(lockBefore, lockAfterB)
 
 	expectedDiffA := lockfileDiff{
 		AddedConfigs:             []config{},
@@ -185,7 +185,7 @@ func TestLockfileDiffAddedGlobalDeps(t *testing.T) {
 		GlobalDependencies: []globalDependency{commonGlobalDependency},
 	}
 
-	diff := diffLockfiles(lockBefore, lockAfter)
+	diff := DiffLocks(lockBefore, lockAfter)
 
 	expectedDiff := lockfileDiff{
 		AddedConfigs:             []config{},
@@ -207,7 +207,7 @@ func TestLockfileDiffRemovedGlobalDeps(t *testing.T) {
 		GlobalDependencies: []globalDependency{},
 	}
 
-	diff := diffLockfiles(lockBefore, lockAfter)
+	diff := DiffLocks(lockBefore, lockAfter)
 
 	expectedDiff := lockfileDiff{
 		AddedConfigs:             []config{},
@@ -219,4 +219,76 @@ func TestLockfileDiffRemovedGlobalDeps(t *testing.T) {
 		VersionChanged:           false,
 	}
 	assert.Equal(t, expectedDiff, diff)
+}
+
+func TestUpdateLockfileInstallInfo(t *testing.T) {
+	configs := []config{commonCfg}
+	lock := lockfile{
+		Version:            "",
+		Mode:               "",
+		GlobalDependencies: []globalDependency{},
+		Configs:            configs,
+		HiddenConfigs:      []config{},
+	}
+	time := now()
+	expectedInstallInfo := installInfo{
+		IsInstalled:           true,
+		InstallTime:           time,
+		InstallInstruction:    "some nice instruction",
+		DependenciesInstalled: false,
+		WasUninstalled:        false,
+		UninstallTime:         "",
+		UninstallInstruction:  "",
+	}
+	forUpdate := map[string]installInfo{commonCfg.Name: expectedInstallInfo}
+
+	lock.UpdateInstallInfo(forUpdate)
+
+	assert.Equal(t, expectedInstallInfo, lock.Configs[0].InstallInfo)
+}
+
+func TestCopyInstallInfo(t *testing.T) {
+	cfgA := createCfg("cargo-binstall")
+	cfgB := createCfg("obs-studio")
+	cfgC := createCfg("ghostty")
+	lockTo := lockfile{
+		Configs: []config{cfgA, cfgB, cfgC},
+	}
+
+	cfgA.InstallInfo = installInfo{
+		IsInstalled:           true,
+		InstallTime:           now(),
+		InstallInstruction:    "A",
+		DependenciesInstalled: true,
+		WasUninstalled:        false,
+		UninstallTime:         "",
+		UninstallInstruction:  "",
+	}
+	cfgB.InstallInfo = installInfo{
+		IsInstalled:           true,
+		InstallTime:           now(),
+		InstallInstruction:    "B",
+		DependenciesInstalled: true,
+		WasUninstalled:        false,
+		UninstallTime:         "",
+		UninstallInstruction:  "",
+	}
+	cfgC.InstallInfo = installInfo{
+		IsInstalled:           false,
+		InstallTime:           "",
+		InstallInstruction:    "",
+		DependenciesInstalled: false,
+		WasUninstalled:        true,
+		UninstallTime:         now(),
+		UninstallInstruction:  "C",
+	}
+	lockFrom := lockfile{
+		Configs:       []config{cfgA, cfgB},
+		HiddenConfigs: []config{cfgC},
+	}
+
+	CopyInstallInfo(&lockFrom, &lockTo)
+
+	expectedConfigsWithInfo := []config{cfgA, cfgB, cfgC}
+	assert.Equal(t, lockTo.Configs, expectedConfigsWithInfo)
 }
