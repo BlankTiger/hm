@@ -276,21 +276,25 @@ func uninstallWithParuCmd(pkg string) string {
 
 func installWithPacaurCmd(pkg string) string {
 	// TODO: verify
+	panic("verify")
 	return "pacaur -S " + pkg
 }
 
 func uninstallWithPacaurCmd(pkg string) string {
 	// TODO: verify
+	panic("verify")
 	return "pacaur -R " + pkg
 }
 
 func installWithAurmanCmd(pkg string) string {
 	// TODO: verify
+	panic("verify")
 	return "aurman -S " + pkg
 }
 
 func uninstallWithAurmanCmd(pkg string) string {
 	// TODO: verify
+	panic("verify")
 	return "aurman -R " + pkg
 }
 
