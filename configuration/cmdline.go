@@ -67,6 +67,7 @@ func Parse() Configuration {
 
 	// TODO: think if this is something that should be done at all times, or not
 	// saveLockDiff := flag.Bool("save-diff", false, "wheter to save lockfile diff from before and after to a file regardless of the --debug flag")
+	manage := flag.Bool("manage", false, "whether to install and uninstall packages using INSTALL and UNINSTALL instructions (this flag is like passing --install and --uninstall at the same time)")
 
 	install := flag.Bool("install", false, "whether to install packages using INSTALL instructions found in config folders")
 	onlyInstall := flag.Bool("only-install", false, "doesnt copy configs over, only installs the packages that would be copied over based on their INSTALL instructions, --install can be omitted if this option is used")
@@ -84,6 +85,11 @@ func Parse() Configuration {
 	targetDirDefault := homeDir + "/.configbkp"
 	targetdir := flag.String("targetdir", targetDirDefault, "target for symlinks for debugging, without the trailing /")
 	flag.Parse()
+
+	if *manage {
+		*install = true
+		*uninstall = true
+	}
 
 	defaultIndent := "    "
 	var level = slog.LevelInfo
