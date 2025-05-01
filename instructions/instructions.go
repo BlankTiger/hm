@@ -124,31 +124,31 @@ func (m *InstallMethod) CreateInstallCmd(pkg string) (cmd string, err error) {
 	case System:
 		cmd, err = installWithSystemCmd(pkg)
 	case Apt:
-		cmd, err = installWithAptCmd(pkg)
+		cmd = installWithAptCmd(pkg)
 	case Dnf:
-		cmd, err = installWithDnfCmd(pkg)
+		cmd = installWithDnfCmd(pkg)
 	case Brew:
-		cmd, err = installWithBrewCmd(pkg)
+		cmd = installWithBrewCmd(pkg)
 	case Pacman:
-		cmd, err = installWithPacmanCmd(pkg)
+		cmd = installWithPacmanCmd(pkg)
 
 	// aur
 	case Aur:
 		cmd, err = installWithAurCmd(pkg)
 	case Yay:
-		cmd, err = installWithYayCmd(pkg)
+		cmd = installWithYayCmd(pkg)
 	case Paru:
-		cmd, err = installWithParuCmd(pkg)
+		cmd = installWithParuCmd(pkg)
 	case Pacaur:
-		cmd, err = installWithPacaurCmd(pkg)
+		cmd = installWithPacaurCmd(pkg)
 	case Aurman:
-		cmd, err = installWithAurmanCmd(pkg)
+		cmd = installWithAurmanCmd(pkg)
 
 	// misc
 	case Cargo:
-		cmd, err = installWithCargoCmd(pkg)
+		cmd = installWithCargoCmd(pkg)
 	case CargoBinstall:
-		cmd, err = installWithCargoBinstallCmd(pkg)
+		cmd = installWithCargoBinstallCmd(pkg)
 	case Bash:
 		// in this case the package is actually a command passed in by the user
 		cmd = pkg
@@ -169,31 +169,31 @@ func (m *InstallMethod) CreateUninstallCmd(pkg string) (cmd string, err error) {
 	case System:
 		cmd, err = uninstallWithSystemCmd(pkg)
 	case Apt:
-		cmd, err = uninstallWithAptCmd(pkg)
+		cmd = uninstallWithAptCmd(pkg)
 	case Dnf:
-		cmd, err = uninstallWithDnfCmd(pkg)
+		cmd = uninstallWithDnfCmd(pkg)
 	case Brew:
-		cmd, err = uninstallWithBrewCmd(pkg)
+		cmd = uninstallWithBrewCmd(pkg)
 	case Pacman:
-		cmd, err = uninstallWithPacmanCmd(pkg)
+		cmd = uninstallWithPacmanCmd(pkg)
 
 	// aur
 	case Aur:
 		cmd, err = uninstallWithAurCmd(pkg)
 	case Yay:
-		cmd, err = uninstallWithYayCmd(pkg)
+		cmd = uninstallWithYayCmd(pkg)
 	case Paru:
-		cmd, err = uninstallWithParuCmd(pkg)
+		cmd = uninstallWithParuCmd(pkg)
 	case Pacaur:
-		cmd, err = uninstallWithPacaurCmd(pkg)
+		cmd = uninstallWithPacaurCmd(pkg)
 	case Aurman:
-		cmd, err = uninstallWithAurmanCmd(pkg)
+		cmd = uninstallWithAurmanCmd(pkg)
 
 	// misc
 	case Cargo:
-		cmd, err = uninstallWithCargoCmd(pkg)
+		cmd = uninstallWithCargoCmd(pkg)
 	case CargoBinstall:
-		cmd, err = uninstallWithCargoBinstallCmd(pkg)
+		cmd = uninstallWithCargoBinstallCmd(pkg)
 
 	default:
 		err = errors.New(fmt.Sprintf("this uninstallation method is either not implemented, or is invalid, method='%s'", *m))
@@ -202,127 +202,104 @@ func (m *InstallMethod) CreateUninstallCmd(pkg string) (cmd string, err error) {
 	return cmd, err
 }
 
-func installWithCargoCmd(pkg string) (string, error) {
-	cmd := "cargo install " + pkg
-	return cmd, nil
+func installWithCargoCmd(pkg string) string {
+	return "cargo install " + pkg
 }
 
-func uninstallWithCargoCmd(pkg string) (string, error) {
-	cmd := "cargo uninstall " + pkg
-	return cmd, nil
+func uninstallWithCargoCmd(pkg string) string {
+	return "cargo uninstall " + pkg
 }
 
-func installWithCargoBinstallCmd(pkg string) (string, error) {
-	cmd := "cargo-binstall " + pkg
-	return cmd, nil
+func installWithCargoBinstallCmd(pkg string) string {
+	return "cargo-binstall " + pkg
 }
 
-func uninstallWithCargoBinstallCmd(pkg string) (string, error) {
+func uninstallWithCargoBinstallCmd(pkg string) string {
 	return uninstallWithCargoCmd(pkg)
 }
 
-func installWithPacmanCmd(pkg string) (string, error) {
-	cmd := "sudo pacman -Syy " + pkg
-	return cmd, nil
+func installWithPacmanCmd(pkg string) string {
+	return "sudo pacman -Syy " + pkg
 }
 
-func uninstallWithPacmanCmd(pkg string) (string, error) {
-	cmd := "sudo pacman -R " + pkg
-	return cmd, nil
+func uninstallWithPacmanCmd(pkg string) string {
+	return "sudo pacman -R " + pkg
 }
 
-func installWithAptCmd(pkg string) (string, error) {
-	cmd := "sudo apt install " + pkg
-	return cmd, nil
+func installWithAptCmd(pkg string) string {
+	return "sudo apt install " + pkg
 }
 
-func uninstallWithAptCmd(pkg string) (string, error) {
-	cmd := "sudo apt remove " + pkg
-	return cmd, nil
+func uninstallWithAptCmd(pkg string) string {
+	return "sudo apt remove " + pkg
 }
 
-func installWithDnfCmd(pkg string) (string, error) {
-	cmd := "dnf install " + pkg
-	return cmd, nil
+func installWithDnfCmd(pkg string) string {
+	return "dnf install " + pkg
 }
 
-func uninstallWithDnfCmd(pkg string) (string, error) {
-	cmd := "dnf remove " + pkg
-	return cmd, nil
+func uninstallWithDnfCmd(pkg string) string {
+	return "dnf remove " + pkg
 }
 
-func installWithBrewCmd(pkg string) (string, error) {
-	cmd := "brew install " + pkg
-	return cmd, nil
+func installWithBrewCmd(pkg string) string {
+	return "brew install " + pkg
 }
 
-func uninstallWithBrewCmd(pkg string) (string, error) {
-	cmd := "brew uninstall " + pkg
-	return cmd, nil
+func uninstallWithBrewCmd(pkg string) string {
+	return "brew uninstall " + pkg
 }
 
 func installWithAurCmd(pkg string) (string, error) {
-	cmd, err := genAurInstallCmd(aurPkgManager, pkg)
-	return cmd, err
+	return genAurInstallCmd(aurPkgManager, pkg)
 }
 
 func uninstallWithAurCmd(pkg string) (string, error) {
-	cmd, err := genAurUninstallCmd(aurPkgManager, pkg)
-	return cmd, err
+	return genAurUninstallCmd(aurPkgManager, pkg)
 }
 
-func installWithYayCmd(pkg string) (string, error) {
-	cmd := "yay -S --sudoloop " + pkg
-	return cmd, nil
+func installWithYayCmd(pkg string) string {
+	return "yay -S --sudoloop " + pkg
 }
 
-func uninstallWithYayCmd(pkg string) (string, error) {
-	cmd := "yay -R " + pkg
-	return cmd, nil
+func uninstallWithYayCmd(pkg string) string {
+	return "yay -R " + pkg
 }
 
-func installWithParuCmd(pkg string) (string, error) {
-	cmd := "paru -S --sudoloop " + pkg
-	return cmd, nil
+func installWithParuCmd(pkg string) string {
+	return "paru -S --sudoloop " + pkg
 }
 
-func uninstallWithParuCmd(pkg string) (string, error) {
-	cmd := "paru -R " + pkg
-	return cmd, nil
+func uninstallWithParuCmd(pkg string) string {
+	return "paru -R " + pkg
 }
 
-func installWithPacaurCmd(pkg string) (string, error) {
+func installWithPacaurCmd(pkg string) string {
 	// TODO: verify
-	cmd := "pacaur -S " + pkg
-	return cmd, nil
+	return "pacaur -S " + pkg
 }
 
-func uninstallWithPacaurCmd(pkg string) (string, error) {
+func uninstallWithPacaurCmd(pkg string) string {
 	// TODO: verify
-	cmd := "pacaur -R " + pkg
-	return cmd, nil
+	return "pacaur -R " + pkg
 }
 
-func installWithAurmanCmd(pkg string) (string, error) {
+func installWithAurmanCmd(pkg string) string {
 	// TODO: verify
-	cmd := "aurman -S " + pkg
-	return cmd, nil
+	return "aurman -S " + pkg
 }
 
-func uninstallWithAurmanCmd(pkg string) (string, error) {
+func uninstallWithAurmanCmd(pkg string) string {
 	// TODO: verify
-	cmd := "aurman -R " + pkg
-	return cmd, nil
+	return "aurman -R " + pkg
 }
 
 func installWithSystemCmd(pkg string) (string, error) {
-	cmd, err := genSystemInstallCmd(systemPkgManager, pkg)
-	return cmd, err
+	return genSystemInstallCmd(systemPkgManager, pkg)
 }
 
 func uninstallWithSystemCmd(pkg string) (string, error) {
-	cmd, err := genSystemUninstallCmd(systemPkgManager, pkg)
-	return cmd, err
+	return genSystemUninstallCmd(systemPkgManager, pkg)
 }
 
 var (
@@ -341,13 +318,13 @@ func genSystemInstallCmd(manager InstallMethod, pkg string) (cmd string, err err
 		err = notSystemPkgManagerErr
 
 	case Pacman:
-		cmd, err = installWithPacmanCmd(pkg)
+		cmd = installWithPacmanCmd(pkg)
 	case Apt:
-		cmd, err = installWithAptCmd(pkg)
+		cmd = installWithAptCmd(pkg)
 	case Dnf:
-		cmd, err = installWithDnfCmd(pkg)
+		cmd = installWithDnfCmd(pkg)
 	case Brew:
-		cmd, err = installWithBrewCmd(pkg)
+		cmd = installWithBrewCmd(pkg)
 
 	}
 
@@ -365,13 +342,13 @@ func genSystemUninstallCmd(manager InstallMethod, pkg string) (cmd string, err e
 		err = notSystemPkgManagerErr
 
 	case Pacman:
-		cmd, err = uninstallWithPacmanCmd(pkg)
+		cmd = uninstallWithPacmanCmd(pkg)
 	case Apt:
-		cmd, err = uninstallWithAptCmd(pkg)
+		cmd = uninstallWithAptCmd(pkg)
 	case Dnf:
-		cmd, err = uninstallWithDnfCmd(pkg)
+		cmd = uninstallWithDnfCmd(pkg)
 	case Brew:
-		cmd, err = uninstallWithBrewCmd(pkg)
+		cmd = uninstallWithBrewCmd(pkg)
 
 	}
 
@@ -394,13 +371,13 @@ func genAurInstallCmd(manager InstallMethod, pkg string) (cmd string, err error)
 		err = notAurPkgManagerErr
 
 	case Yay:
-		cmd, err = installWithYayCmd(pkg)
+		cmd = installWithYayCmd(pkg)
 	case Paru:
-		cmd, err = installWithParuCmd(pkg)
+		cmd = installWithParuCmd(pkg)
 	case Pacaur:
-		cmd, err = installWithPacaurCmd(pkg)
+		cmd = installWithPacaurCmd(pkg)
 	case Aurman:
-		cmd, err = installWithAurmanCmd(pkg)
+		cmd = installWithAurmanCmd(pkg)
 
 	}
 
@@ -418,13 +395,13 @@ func genAurUninstallCmd(manager InstallMethod, pkg string) (cmd string, err erro
 		err = notAurPkgManagerErr
 
 	case Yay:
-		cmd, err = uninstallWithYayCmd(pkg)
+		cmd = uninstallWithYayCmd(pkg)
 	case Paru:
-		cmd, err = uninstallWithParuCmd(pkg)
+		cmd = uninstallWithParuCmd(pkg)
 	case Pacaur:
-		cmd, err = uninstallWithPacaurCmd(pkg)
+		cmd = uninstallWithPacaurCmd(pkg)
 	case Aurman:
-		cmd, err = uninstallWithAurmanCmd(pkg)
+		cmd = uninstallWithAurmanCmd(pkg)
 
 	}
 
