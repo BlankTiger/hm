@@ -81,8 +81,8 @@ func Parse() Configuration {
 
 	sourcedir := flag.String("sourcedir", homeDir+"/.config/homecfg", "source of configuration files, without the trailing /")
 	// TODO: UNCOMMENT AFTER FINISHING TESTING
-	// targetDirDefault := homeDir + "/.config"
-	targetDirDefault := homeDir + "/.configbkp"
+	targetDirDefault := homeDir + "/.config"
+	// targetDirDefault := homeDir + "/.configbkp"
 	targetdir := flag.String("targetdir", targetDirDefault, "target for symlinks for debugging, without the trailing /")
 	flag.Parse()
 
