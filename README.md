@@ -9,7 +9,8 @@ project (very slow, probably a skill issue, I know).
 
 `hm` helps you manage your dotfiles and system configurations by:
 
-1. Copying or symlinking configuration files from a source directory to their target locations
+1. Copying or symlinking configuration files from a source directory to their
+   target locations
 2. Installing, uninstalling, and upgrading packages based on instruction files
 3. Tracking changes with a lockfile system
 4. Managing dependencies for your configurations
@@ -51,6 +52,9 @@ hm --uninstall
 # Only uninstall packages without modifying configs
 hm --only-uninstall
 
+# Acts like passing both --install and --uninstall at the same time
+hm --manage
+
 # Manage specific packages
 hm --pkgs fish,ghostty
 ```
@@ -76,14 +80,16 @@ $HOME/.config/homecfg/
     ├── fish/                 # Fish shell configuration
     │   ├── config.fish
     │   ├── INSTALL           # Installation instructions
-    │   ├── UNINSTALL         # Uninstallation instructions
+    │   ├── UNINSTALL         # Additional shell script run during uninstallation
     │   └── DEPENDENCIES      # Required dependencies
     ├── nvim/
     │   ├── init.lua
-    │   └── INSTALL
-    │   ├── UNINSTALL
+    │   ├── INSTALL
+    │   └── UNINSTALL
     └── .tmux/                # Hidden dirs are skipped (notice the dot)
-        └── tmux.conf
+        ├── tmux.conf
+        ├── INSTALL           # Used to determine uninstallation method for dirs hidden for the first time
+        └── UNINSTALL         # Shell script for cleanup (running once when dir is hidden for the first time)
 ```
 
 ## Special Files
@@ -137,7 +143,8 @@ package manager that is installed.
 The `UNINSTALL` file is treated as a bash script. When `INSTALL` contains
 packages installed via methods other than `bash`, then this file is redundant,
 otherwise you can uninstall the package installed with `bash` method by
-specyfing how to do that in this file.
+specyfing how to do that in this file. You can also use this file as a cleanup
+script, because it will always run during uninstallation.
 
 ### DEPENDENCIES
 
@@ -148,6 +155,9 @@ cargo:fd
 system:fzf
 system:git
 ```
+
+NOTE: Currently dependencies are only installed. They aren't uninstalled
+when you uninstall the config that owns them.
 
 ### config/DEPENDENCIES
 
@@ -174,8 +184,9 @@ hm --dbg
    and executes them
 3. For each configuration, it:
    - Copies or symlinks the files to the target location
-   - Parses `INSTALL` and `DEPENDENCIES` files if present
+   - Parses `INSTALL`, `DEPENDENCIES` and `UNINSTALL` files if present
    - Installs packages and dependencies when requested
+   - Uninstalls packages when requested
 4. Tracks all activities in a lockfile (`hmlock.json`)
 5. Generates a diff file (`hmlock_diff.json`) to show changes
 
@@ -183,11 +194,15 @@ hm --dbg
 
 1. While `hm` supports installing software, it doesn't install tools needed for
    the installation process itself. For example, `hm` won't install
-   `cargo-binstall` automatically. To do that the recommended way is to put
+   `cargo-binstall` automatically, even if you use `cargo-binstall` as an
+   installation method for some package. To do that the recommended way is to put
    `system:cargo-binstall` instruction in the `config/DEPENDENCIES` file.
-2. If installation fails for any package, `hm` will continue processing other configurations.
+2. If installation fails for any package, `hm` will continue processing other
+   configurations.
 3. Hidden directories (starting with a dot) are not managed by `hm`.
-4. The `.git` directory is always ignored.
+4. If you hide a configuration directory previously managed by `hm`, you can
+   uninstall its dependencies by passing doing `hm --uninstall`.
+5. The `.git` directory is always ignored.
 
 ## Lockfile
 
@@ -195,4 +210,5 @@ hm --dbg
 - What configurations have been deployed
 - What packages have been installed
 - Installation timestamps
-- Skipped configurations
+- Hidden configurations
+- Global dependencies
