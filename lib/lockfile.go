@@ -22,7 +22,7 @@ type lockfile struct {
 	Mode               Mode               `json:"mode"`
 	GlobalDependencies []globalDependency `json:"globalDependencies"`
 	Configs            []config           `json:"configs"`
-	HiddenConfigs      []config           `json:"skippedConfigs"`
+	HiddenConfigs      []config           `json:"hiddenConfigs"`
 }
 
 type globalDependency struct {
@@ -99,6 +99,12 @@ func (l *lockfile) UpdateInstallInfo(info map[string]installInfo) {
 			l.Configs[idx].InstallInfo = instInfo
 		}
 	}
+
+	for idx, cfg := range l.HiddenConfigs {
+		if instInfo, ok := info[cfg.Name]; ok {
+			l.HiddenConfigs[idx].InstallInfo = instInfo
+		}
+	}
 }
 
 func CopyInstallInfo(from, to *lockfile) {
@@ -163,21 +169,21 @@ func CreateLockBasedOnConfigs(c *configuration.Configuration) (*lockfile, error)
 		from := c.SourceCfgDir + "/" + name
 		to := c.TargetDir + "/" + name
 
+		requirements, err := ParseRequirements(from)
+		if err != nil {
+			Logger.Error("something went wrong while trying to parse requirements", "err", err)
+			return nil, err
+		}
+
 		if name[0] == '.' {
 			Logger.Info("configs", "skipping", name)
 			// skipping the dot
 			nameIfNotSkipped := name[1:]
 			fromIfNotSkipped := c.SourceCfgDir + "/" + nameIfNotSkipped
 			toIfNotSkipped := c.TargetDir + "/" + nameIfNotSkipped
-			config := NewConfig(nameIfNotSkipped, fromIfNotSkipped, toIfNotSkipped, nil)
+			config := NewConfig(nameIfNotSkipped, fromIfNotSkipped, toIfNotSkipped, requirements)
 			lockfile.AppendSkippedConfig(config)
 			continue
-		}
-
-		requirements, err := ParseRequirements(from)
-		if err != nil {
-			Logger.Error("something went wrong while trying to parse requirements", "err", err)
-			return nil, err
 		}
 
 		config := NewConfig(name, from, to, requirements)
@@ -233,7 +239,7 @@ func (d *lockfileDiff) Save(path, indent string) error {
 func DiffLocks(lockBefore, lockAfter lockfile) lockfileDiff {
 	addedConfigs := []config{}
 	removedConfigs := []config{}
-	newlySkippedConfigs := []config{}
+	newlyHiddenConfigs := []config{}
 	previouslyRemovedConfigs := []config{}
 	addedGlobalDeps := []globalDependency{}
 	removedGlobalDeps := []globalDependency{}
@@ -244,7 +250,7 @@ func DiffLocks(lockBefore, lockAfter lockfile) lockfileDiff {
 		}
 
 		if ContainsConfig(lockAfter.HiddenConfigs, prevConf) && !ContainsConfig(lockBefore.HiddenConfigs, prevConf) {
-			newlySkippedConfigs = append(newlySkippedConfigs, prevConf)
+			newlyHiddenConfigs = append(newlyHiddenConfigs, prevConf)
 		}
 	}
 

@@ -118,6 +118,10 @@ func parseInstallInstructions(path string) (res *installInstruction, err error) 
 		}
 
 		txt := string(txtBytes)
+		if txt == "" {
+			return nil, nil
+		}
+
 		res, err = parseInstallInstruction(txt)
 		if err != nil {
 			return nil, err

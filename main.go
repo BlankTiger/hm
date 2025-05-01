@@ -34,6 +34,9 @@ func _main(c *conf.Configuration) error {
 		return err
 	}
 
+	defer func() {
+	}()
+
 	// config/DEPENDENCIES file parsing
 	globalDependencies, err := lib.ParseGlobalDependencies(c.SourceCfgDir)
 	if err != nil {
@@ -44,20 +47,6 @@ func _main(c *conf.Configuration) error {
 	lockAfter.GlobalDependencies = globalDependencies
 
 	lib.CopyInstallInfo(lockBefore, lockAfter)
-
-	diff := lib.DiffLocks(*lockBefore, *lockAfter)
-
-	defer func() {
-		err := lockAfter.Save(c.LockfilePath, c.DefaultIndent)
-		// NOTE: no explicit return after an error, cause we wanna try to save lockfile diff anyway if we can
-		if err != nil {
-			lib.Logger.Error("something went wrong while trying to save the lockfile", "err", err)
-		}
-		err = diff.Save(c.LockfileDiffPath, c.DefaultIndent)
-		if err != nil {
-			lib.Logger.Error("something went wrong while trying to save the lockfile diff", "err", err)
-		}
-	}()
 
 	globalDepsChanged := lib.DidGlobalDependenciesChange(&lockBefore.GlobalDependencies, &lockAfter.GlobalDependencies)
 	globalDepsInstalled := lib.WereGlobalDependenciesInstalled(&lockAfter.GlobalDependencies)
@@ -92,7 +81,7 @@ func _main(c *conf.Configuration) error {
 		lib.Logger.Info("skipping copying/symlinking the config, because --only-install or --only-uninstall was passed")
 	}
 
-	if (c.Install || c.OnlyInstall) || c.Upgrade && !c.OnlyUninstall {
+	if (c.Install || c.OnlyInstall || c.Upgrade) && !c.OnlyUninstall {
 		infoForUpdate := lib.Install(lockAfter)
 		lockAfter.UpdateInstallInfo(infoForUpdate)
 	}
@@ -100,6 +89,17 @@ func _main(c *conf.Configuration) error {
 	if (c.Uninstall || c.OnlyUninstall) && !c.OnlyInstall {
 		infoForUpdate := lib.Uninstall(lockAfter)
 		lockAfter.UpdateInstallInfo(infoForUpdate)
+	}
+
+	err = lockAfter.Save(c.LockfilePath, c.DefaultIndent)
+	if err != nil {
+		lib.Logger.Error("something went wrong while trying to save the lockfile", "err", err)
+	}
+
+	diff := lib.DiffLocks(*lockBefore, *lockAfter)
+	err = diff.Save(c.LockfileDiffPath, c.DefaultIndent)
+	if err != nil {
+		lib.Logger.Error("something went wrong while trying to save the lockfile diff", "err", err)
 	}
 
 	return nil
