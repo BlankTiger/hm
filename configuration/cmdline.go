@@ -12,6 +12,7 @@ type Configuration struct {
 	// flags
 	CopyMode      bool
 	Debug         bool
+	Tui           bool
 	Install       bool
 	OnlyInstall   bool
 	Uninstall     bool
@@ -34,6 +35,7 @@ func (c *Configuration) Display() {
 	cli_args := "cli args"
 	c.Logger.Debug(cli_args, "copy", c.CopyMode)
 	c.Logger.Debug(cli_args, "dbg", c.Debug)
+	c.Logger.Debug(cli_args, "tui", c.Tui)
 	c.Logger.Debug(cli_args, "install", c.Install)
 	c.Logger.Debug(cli_args, "only-install", c.OnlyInstall)
 	c.Logger.Debug(cli_args, "uninstall", c.Uninstall)
@@ -64,6 +66,8 @@ func Parse() Configuration {
 	var homeDir = os.Getenv("HOME")
 	copyMode := flag.Bool("copy", false, "copies the config files instead of symlinking them")
 	debug := flag.Bool("dbg", false, "set logging level to debug")
+
+	tui := flag.Bool("tui", false, "run the configuration manager in a TUI")
 
 	// TODO: think if this is something that should be done at all times, or not
 	// saveLockDiff := flag.Bool("save-diff", false, "wheter to save lockfile diff from before and after to a file regardless of the --debug flag")
@@ -108,6 +112,7 @@ func Parse() Configuration {
 	return Configuration{
 		CopyMode:      *copyMode,
 		Debug:         *debug,
+		Tui:           *tui,
 		Install:       *install,
 		OnlyInstall:   *onlyInstall,
 		Uninstall:     *uninstall,
