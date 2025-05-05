@@ -17,12 +17,12 @@ const (
 	Dev Mode = "symlink"
 )
 
-type lockfile struct {
+type Lockfile struct {
 	Version            string             `json:"version"`
 	Mode               Mode               `json:"mode"`
 	GlobalDependencies []globalDependency `json:"globalDependencies"`
-	Configs            []config           `json:"configs"`
-	HiddenConfigs      []config           `json:"hiddenConfigs"`
+	Configs            []Config           `json:"configs"`
+	HiddenConfigs      []Config           `json:"hiddenConfigs"`
 }
 
 type globalDependency struct {
@@ -89,11 +89,11 @@ func WereGlobalDependenciesInstalled(deps *[]globalDependency) bool {
 	return false
 }
 
-func (l *lockfile) AppendSkippedConfig(config config) {
+func (l *Lockfile) AppendSkippedConfig(config Config) {
 	l.HiddenConfigs = append(l.HiddenConfigs, config)
 }
 
-func (l *lockfile) UpdateInstallInfo(info map[string]installInfo) {
+func (l *Lockfile) UpdateInstallInfo(info map[string]installInfo) {
 	for idx, cfg := range l.Configs {
 		if instInfo, ok := info[cfg.Name]; ok {
 			l.Configs[idx].InstallInfo = instInfo
@@ -107,7 +107,7 @@ func (l *lockfile) UpdateInstallInfo(info map[string]installInfo) {
 	}
 }
 
-func CopyInstallInfo(from, to *lockfile) {
+func CopyInstallInfo(from, to *Lockfile) {
 	allSourceCfgs := slices.Concat(from.Configs, from.HiddenConfigs)
 configs:
 	for _, cfgFrom := range allSourceCfgs {
@@ -135,10 +135,10 @@ configs:
 	}
 }
 
-func newLockfile() lockfile {
-	return lockfile{
-		Configs:            []config{},
-		HiddenConfigs:      []config{},
+func newLockfile() Lockfile {
+	return Lockfile{
+		Configs:            []Config{},
+		HiddenConfigs:      []Config{},
 		GlobalDependencies: []globalDependency{},
 		Mode:               Dev,
 		Version:            "0.1.0",
@@ -147,7 +147,7 @@ func newLockfile() lockfile {
 
 var EmptyLockfile = newLockfile()
 
-func CreateLockBasedOnConfigs(c *configuration.Configuration) (*lockfile, error) {
+func CreateLockBasedOnConfigs(c *configuration.Configuration) (*Lockfile, error) {
 	lockfile := EmptyLockfile
 	entries, err := os.ReadDir(c.SourceCfgDir)
 
@@ -202,10 +202,10 @@ func CreateLockBasedOnConfigs(c *configuration.Configuration) (*lockfile, error)
 }
 
 type lockfileDiff struct {
-	AddedConfigs   []config `json:"addedConfigs"`
-	RemovedConfigs []config `json:"removedConfigs"`
+	AddedConfigs   []Config `json:"addedConfigs"`
+	RemovedConfigs []Config `json:"removedConfigs"`
 	// TODO: is this info necessary?
-	PreviouslyRemovedConfigs []config           `json:"previouslyRemovedConfigs"`
+	PreviouslyRemovedConfigs []Config           `json:"previouslyRemovedConfigs"`
 	AddedGlobalDeps          []globalDependency `json:"addedGlobalDeps"`
 	RemovedGlobalDeps        []globalDependency `json:"removedGlobalDeps"`
 	ModeChanged              bool               `json:"modeChanged"`
@@ -236,11 +236,11 @@ func (d *lockfileDiff) Save(path, indent string) error {
 	return nil
 }
 
-func DiffLocks(lockBefore, lockAfter lockfile) lockfileDiff {
-	addedConfigs := []config{}
-	removedConfigs := []config{}
-	newlyHiddenConfigs := []config{}
-	previouslyRemovedConfigs := []config{}
+func DiffLocks(lockBefore, lockAfter Lockfile) lockfileDiff {
+	addedConfigs := []Config{}
+	removedConfigs := []Config{}
+	newlyHiddenConfigs := []Config{}
+	previouslyRemovedConfigs := []Config{}
 	addedGlobalDeps := []globalDependency{}
 	removedGlobalDeps := []globalDependency{}
 
@@ -290,7 +290,7 @@ func DiffLocks(lockBefore, lockAfter lockfile) lockfileDiff {
 	}
 }
 
-func ReadOrCreateLockfile(path string) (*lockfile, error) {
+func ReadOrCreateLockfile(path string) (*Lockfile, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -317,7 +317,7 @@ func ReadOrCreateLockfile(path string) (*lockfile, error) {
 	return parseLockfile(txt)
 }
 
-func (l *lockfile) Save(path, indent string) error {
+func (l *Lockfile) Save(path, indent string) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return err
@@ -341,12 +341,12 @@ func (l *lockfile) Save(path, indent string) error {
 	return nil
 }
 
-func (l *lockfile) AddConfig(config config) {
+func (l *Lockfile) AddConfig(config Config) {
 	l.Configs = append(l.Configs, config)
 }
 
-func parseLockfile(txt []byte) (*lockfile, error) {
-	lockfile := lockfile{}
+func parseLockfile(txt []byte) (*Lockfile, error) {
+	lockfile := Lockfile{}
 	err := json.Unmarshal(txt, &lockfile)
 	if err != nil {
 		return nil, err

@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func createCfg(name string) config {
-	return config{
+func createCfg(name string) Config {
+	return Config{
 		Name: name,
 		From: "/some/dir",
 		To:   "/some/other/dir",
@@ -23,20 +23,20 @@ func createCfg(name string) config {
 var commonCfg = createCfg("fish")
 
 func TestLockfileDiffingAddedConfigs(t *testing.T) {
-	lockBefore := lockfile{
-		Configs: []config{commonCfg},
+	lockBefore := Lockfile{
+		Configs: []Config{commonCfg},
 	}
 	newCfg := createCfg("zsh")
-	lockAfter := lockfile{
-		Configs: []config{commonCfg, newCfg},
+	lockAfter := Lockfile{
+		Configs: []Config{commonCfg, newCfg},
 	}
 
 	diff := DiffLocks(lockBefore, lockAfter)
 
 	expectedDiff := lockfileDiff{
-		AddedConfigs:             []config{newCfg},
-		RemovedConfigs:           []config{},
-		PreviouslyRemovedConfigs: []config{},
+		AddedConfigs:             []Config{newCfg},
+		RemovedConfigs:           []Config{},
+		PreviouslyRemovedConfigs: []Config{},
 		AddedGlobalDeps:          []globalDependency{},
 		RemovedGlobalDeps:        []globalDependency{},
 		ModeChanged:              false,
@@ -46,19 +46,19 @@ func TestLockfileDiffingAddedConfigs(t *testing.T) {
 }
 
 func TestLockfileDiffRemovedConfigs(t *testing.T) {
-	lockBefore := lockfile{
-		Configs: []config{commonCfg},
+	lockBefore := Lockfile{
+		Configs: []Config{commonCfg},
 	}
-	lockAfter := lockfile{
-		Configs: []config{},
+	lockAfter := Lockfile{
+		Configs: []Config{},
 	}
 
 	diff := DiffLocks(lockBefore, lockAfter)
 
 	expectedDiff := lockfileDiff{
-		AddedConfigs:             []config{},
-		RemovedConfigs:           []config{commonCfg},
-		PreviouslyRemovedConfigs: []config{},
+		AddedConfigs:             []Config{},
+		RemovedConfigs:           []Config{commonCfg},
+		PreviouslyRemovedConfigs: []Config{},
 		AddedGlobalDeps:          []globalDependency{},
 		RemovedGlobalDeps:        []globalDependency{},
 		ModeChanged:              false,
@@ -68,19 +68,19 @@ func TestLockfileDiffRemovedConfigs(t *testing.T) {
 }
 
 func TestLockfileDiffPreviouslyRemovedConfigs(t *testing.T) {
-	lockBefore := lockfile{
-		HiddenConfigs: []config{commonCfg},
+	lockBefore := Lockfile{
+		HiddenConfigs: []Config{commonCfg},
 	}
-	lockAfter := lockfile{
-		Configs: []config{commonCfg},
+	lockAfter := Lockfile{
+		Configs: []Config{commonCfg},
 	}
 
 	diff := DiffLocks(lockBefore, lockAfter)
 
 	expectedDiff := lockfileDiff{
-		AddedConfigs:             []config{commonCfg},
-		RemovedConfigs:           []config{},
-		PreviouslyRemovedConfigs: []config{commonCfg},
+		AddedConfigs:             []Config{commonCfg},
+		RemovedConfigs:           []Config{},
+		PreviouslyRemovedConfigs: []Config{commonCfg},
 		AddedGlobalDeps:          []globalDependency{},
 		RemovedGlobalDeps:        []globalDependency{},
 		ModeChanged:              false,
@@ -90,13 +90,13 @@ func TestLockfileDiffPreviouslyRemovedConfigs(t *testing.T) {
 }
 
 func TestLockfileDiffModeChanged(t *testing.T) {
-	lockBefore := lockfile{
+	lockBefore := Lockfile{
 		Mode: Cpy,
 	}
-	lockAfterA := lockfile{
+	lockAfterA := Lockfile{
 		Mode: Dev,
 	}
-	lockAfterB := lockfile{
+	lockAfterB := Lockfile{
 		Mode: Cpy,
 	}
 
@@ -104,18 +104,18 @@ func TestLockfileDiffModeChanged(t *testing.T) {
 	diffB := DiffLocks(lockBefore, lockAfterB)
 
 	expectedDiffA := lockfileDiff{
-		AddedConfigs:             []config{},
-		RemovedConfigs:           []config{},
-		PreviouslyRemovedConfigs: []config{},
+		AddedConfigs:             []Config{},
+		RemovedConfigs:           []Config{},
+		PreviouslyRemovedConfigs: []Config{},
 		ModeChanged:              true,
 		VersionChanged:           false,
 		AddedGlobalDeps:          []globalDependency{},
 		RemovedGlobalDeps:        []globalDependency{},
 	}
 	expectedDiffB := lockfileDiff{
-		AddedConfigs:             []config{},
-		RemovedConfigs:           []config{},
-		PreviouslyRemovedConfigs: []config{},
+		AddedConfigs:             []Config{},
+		RemovedConfigs:           []Config{},
+		PreviouslyRemovedConfigs: []Config{},
 		ModeChanged:              false,
 		VersionChanged:           false,
 		AddedGlobalDeps:          []globalDependency{},
@@ -126,13 +126,13 @@ func TestLockfileDiffModeChanged(t *testing.T) {
 }
 
 func TestLockfileDiffVersionChanged(t *testing.T) {
-	lockBefore := lockfile{
+	lockBefore := Lockfile{
 		Version: "0.1.0",
 	}
-	lockAfterA := lockfile{
+	lockAfterA := Lockfile{
 		Version: "0.1.0",
 	}
-	lockAfterB := lockfile{
+	lockAfterB := Lockfile{
 		Version: "0.2.0",
 	}
 
@@ -140,18 +140,18 @@ func TestLockfileDiffVersionChanged(t *testing.T) {
 	diffB := DiffLocks(lockBefore, lockAfterB)
 
 	expectedDiffA := lockfileDiff{
-		AddedConfigs:             []config{},
-		RemovedConfigs:           []config{},
-		PreviouslyRemovedConfigs: []config{},
+		AddedConfigs:             []Config{},
+		RemovedConfigs:           []Config{},
+		PreviouslyRemovedConfigs: []Config{},
 		ModeChanged:              false,
 		VersionChanged:           false,
 		AddedGlobalDeps:          []globalDependency{},
 		RemovedGlobalDeps:        []globalDependency{},
 	}
 	expectedDiffB := lockfileDiff{
-		AddedConfigs:             []config{},
-		RemovedConfigs:           []config{},
-		PreviouslyRemovedConfigs: []config{},
+		AddedConfigs:             []Config{},
+		RemovedConfigs:           []Config{},
+		PreviouslyRemovedConfigs: []Config{},
 		ModeChanged:              false,
 		VersionChanged:           true,
 		AddedGlobalDeps:          []globalDependency{},
@@ -169,7 +169,7 @@ var commonGlobalDependency = globalDependency{
 	InstallInfo: installInfo{
 		IsInstalled:           true,
 		InstallTime:           now(),
-		InstallInstruction:    "sudo pacman -Syy fish",
+		InstallInstruction:    "sudo pacman -S --noconfirm fish",
 		DependenciesInstalled: true,
 		WasUninstalled:        false,
 		UninstallTime:         "",
@@ -178,19 +178,19 @@ var commonGlobalDependency = globalDependency{
 }
 
 func TestLockfileDiffAddedGlobalDeps(t *testing.T) {
-	lockBefore := lockfile{
+	lockBefore := Lockfile{
 		GlobalDependencies: []globalDependency{},
 	}
-	lockAfter := lockfile{
+	lockAfter := Lockfile{
 		GlobalDependencies: []globalDependency{commonGlobalDependency},
 	}
 
 	diff := DiffLocks(lockBefore, lockAfter)
 
 	expectedDiff := lockfileDiff{
-		AddedConfigs:             []config{},
-		RemovedConfigs:           []config{},
-		PreviouslyRemovedConfigs: []config{},
+		AddedConfigs:             []Config{},
+		RemovedConfigs:           []Config{},
+		PreviouslyRemovedConfigs: []Config{},
 		AddedGlobalDeps:          []globalDependency{commonGlobalDependency},
 		RemovedGlobalDeps:        []globalDependency{},
 		ModeChanged:              false,
@@ -200,19 +200,19 @@ func TestLockfileDiffAddedGlobalDeps(t *testing.T) {
 }
 
 func TestLockfileDiffRemovedGlobalDeps(t *testing.T) {
-	lockBefore := lockfile{
+	lockBefore := Lockfile{
 		GlobalDependencies: []globalDependency{commonGlobalDependency},
 	}
-	lockAfter := lockfile{
+	lockAfter := Lockfile{
 		GlobalDependencies: []globalDependency{},
 	}
 
 	diff := DiffLocks(lockBefore, lockAfter)
 
 	expectedDiff := lockfileDiff{
-		AddedConfigs:             []config{},
-		RemovedConfigs:           []config{},
-		PreviouslyRemovedConfigs: []config{},
+		AddedConfigs:             []Config{},
+		RemovedConfigs:           []Config{},
+		PreviouslyRemovedConfigs: []Config{},
 		AddedGlobalDeps:          []globalDependency{},
 		RemovedGlobalDeps:        []globalDependency{commonGlobalDependency},
 		ModeChanged:              false,
@@ -222,13 +222,13 @@ func TestLockfileDiffRemovedGlobalDeps(t *testing.T) {
 }
 
 func TestUpdateLockfileInstallInfo(t *testing.T) {
-	configs := []config{commonCfg}
-	lock := lockfile{
+	configs := []Config{commonCfg}
+	lock := Lockfile{
 		Version:            "",
 		Mode:               "",
 		GlobalDependencies: []globalDependency{},
 		Configs:            configs,
-		HiddenConfigs:      []config{},
+		HiddenConfigs:      []Config{},
 	}
 	time := now()
 	expectedInstallInfo := installInfo{
@@ -251,8 +251,8 @@ func TestCopyInstallInfo(t *testing.T) {
 	cfgA := createCfg("cargo-binstall")
 	cfgB := createCfg("obs-studio")
 	cfgC := createCfg("ghostty")
-	lockTo := lockfile{
-		Configs: []config{cfgA, cfgB, cfgC},
+	lockTo := Lockfile{
+		Configs: []Config{cfgA, cfgB, cfgC},
 	}
 
 	cfgA.InstallInfo = installInfo{
@@ -282,13 +282,13 @@ func TestCopyInstallInfo(t *testing.T) {
 		UninstallTime:         now(),
 		UninstallInstructions: []string{"C"},
 	}
-	lockFrom := lockfile{
-		Configs:       []config{cfgA, cfgB},
-		HiddenConfigs: []config{cfgC},
+	lockFrom := Lockfile{
+		Configs:       []Config{cfgA, cfgB},
+		HiddenConfigs: []Config{cfgC},
 	}
 
 	CopyInstallInfo(&lockFrom, &lockTo)
 
-	expectedConfigsWithInfo := []config{cfgA, cfgB, cfgC}
+	expectedConfigsWithInfo := []Config{cfgA, cfgB, cfgC}
 	assert.Equal(t, lockTo.Configs, expectedConfigsWithInfo)
 }

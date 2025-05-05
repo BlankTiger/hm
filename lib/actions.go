@@ -4,7 +4,7 @@ import (
 	"blanktiger/hm/configuration"
 )
 
-func Symlink(c *configuration.Configuration, configs []config) error {
+func Symlink(c *configuration.Configuration, configs []Config) error {
 	for _, cfg := range configs {
 		Logger.Info("symlinking", "from", cfg.From, "to", cfg.To)
 		err := symlink(cfg.From, cfg.To)
@@ -16,7 +16,7 @@ func Symlink(c *configuration.Configuration, configs []config) error {
 	return nil
 }
 
-func Copy(c *configuration.Configuration, configs []config) error {
+func Copy(c *configuration.Configuration, configs []Config) error {
 	for _, cfg := range configs {
 		Logger.Info("copying", "from", cfg.From, "to", cfg.To)
 		err := copyCfg(cfg.From, cfg.To)
@@ -27,7 +27,7 @@ func Copy(c *configuration.Configuration, configs []config) error {
 	return nil
 }
 
-func Remove(c *configuration.Configuration, configs []config) error {
+func Remove(c *configuration.Configuration, configs []Config) error {
 	for _, cfg := range configs {
 		Logger.Info("removing config from target", "target", cfg.To)
 		err := removeCfg(cfg.To)
@@ -38,7 +38,7 @@ func Remove(c *configuration.Configuration, configs []config) error {
 	return nil
 }
 
-func Install(lock *lockfile) map[string]installInfo {
+func Install(lock *Lockfile) map[string]installInfo {
 	forUpdate := make(map[string]installInfo)
 	for _, cfg := range lock.Configs {
 		if cfg.InstallInfo.IsInstalled {
@@ -75,7 +75,7 @@ func Install(lock *lockfile) map[string]installInfo {
 	return forUpdate
 }
 
-func Uninstall(lock *lockfile) map[string]installInfo {
+func Uninstall(lock *Lockfile) map[string]installInfo {
 	forUpdate := make(map[string]installInfo)
 
 	for _, cfg := range lock.HiddenConfigs {

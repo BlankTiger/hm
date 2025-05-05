@@ -131,7 +131,7 @@ func execute(cmd string) error {
 	return nil
 }
 
-func runUninstallScriptIfItExists(cfg config, info *installInfo) {
+func runUninstallScriptIfItExists(cfg Config, info *installInfo) {
 	idx := strings.LastIndex(cfg.From, "/")
 	from := cfg.From
 	path := from[:idx] + "/." + from[idx+1:] + "/UNINSTALL"
@@ -162,7 +162,7 @@ func runUninstallScriptIfItExists(cfg config, info *installInfo) {
 	}
 }
 
-func uninstallForCfg(cfg config) *installInfo {
+func uninstallForCfg(cfg Config) *installInfo {
 	if cfg.InstallInfo.WasUninstalled {
 		Logger.Debug("skipping uninstallation of already uninstalled packages for config", "cfgName", cfg.Name)
 		return nil
