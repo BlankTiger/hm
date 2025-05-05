@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-type config struct {
+type Config struct {
 	Name         string       `json:"name"`
 	From         string       `json:"from"`
 	To           string       `json:"to"`
@@ -42,13 +42,13 @@ func newInstallInfo() installInfo {
 	return installInfo{}
 }
 
-func NewConfig(name, from, to string, reqs *requirements) config {
+func NewConfig(name, from, to string, reqs *requirements) Config {
 	newReqs := newRequirements()
 	usedReqs := &newReqs
 	if reqs != nil {
 		usedReqs = reqs
 	}
-	return config{
+	return Config{
 		Name:         name,
 		From:         from,
 		To:           to,
@@ -56,11 +56,11 @@ func NewConfig(name, from, to string, reqs *requirements) config {
 	}
 }
 
-func (c *config) Equal(o *config) bool {
+func (c *Config) Equal(o *Config) bool {
 	return c.Name == o.Name && c.From == o.From && c.To == o.To
 }
 
-func ContainsConfig(configs []config, c config) bool {
+func ContainsConfig(configs []Config, c Config) bool {
 	for _, config := range configs {
 		if config.Equal(&c) {
 			return true
