@@ -219,19 +219,19 @@ func uninstallWithCargoBinstallCmd(pkg string) string {
 }
 
 func installWithPacmanCmd(pkg string) string {
-	return "sudo pacman -Syy " + pkg
+	return "sudo pacman -S --noconfirm " + pkg
 }
 
 func uninstallWithPacmanCmd(pkg string) string {
-	return "sudo pacman -R " + pkg
+	return "sudo pacman -R --noconfirm " + pkg
 }
 
 func installWithAptCmd(pkg string) string {
-	return "sudo apt install " + pkg
+	return "sudo apt install -y " + pkg
 }
 
 func uninstallWithAptCmd(pkg string) string {
-	return "sudo apt remove " + pkg
+	return "sudo apt remove -y " + pkg
 }
 
 func installWithDnfCmd(pkg string) string {
