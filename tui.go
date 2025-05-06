@@ -86,8 +86,7 @@ var (
 	paginationStyle         = blist.DefaultStyles().PaginationStyle
 	helpStyle               = blist.DefaultStyles().HelpStyle
 
-	tStyle         = lg.NewStyle().PaddingLeft(8).PaddingRight(8).AlignHorizontal(lg.Center)
-	fStyle         = lg.NewStyle().Foreground(lg.Color(accentColor)).AlignHorizontal(lg.Center)
+	footerStyle    = lg.NewStyle().Foreground(lg.Color(accentColor)).AlignHorizontal(lg.Center)
 	selectedStyle  = lg.NewStyle().Bold(true).Foreground(lg.Color(accentColor))
 	listEntryStyle = lg.NewStyle()
 )
@@ -134,7 +133,9 @@ func initModel(lockfile *lib.Lockfile) model {
 	mList := blist.New(allConfigNames, itemDelegate{}, defaultWidth, defaultListHeight)
 	mList.Title = "Configs - select the ones you wanna copy/symlink."
 	mList.SetShowStatusBar(false)
-	mList.SetFilteringEnabled(true)
+	// TODO: make this work, currently if I have list filtered to one item,
+	// toggling that item actually toggles first item from the unfiltered list
+	mList.SetFilteringEnabled(false)
 	mList.Styles.PaginationStyle = paginationStyle
 	mList.Styles.HelpStyle = helpStyle
 
@@ -174,7 +175,7 @@ const accentColor = "#17d87e"
 
 func (m model) configsToInstallScreen() string {
 	list := m.mList.View()
-	var footerStyle = fStyle.Width(m.termWidth)
+	var footerStyle = footerStyle.Width(m.termWidth)
 	return lg.JoinVertical(lg.Top, list, footerStyle.Render("\nSelect by pressing: <space>\nAccept by pressing: <enter>"))
 }
 
