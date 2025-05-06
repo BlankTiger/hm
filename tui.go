@@ -80,12 +80,13 @@ func (d itemDelegate) Render(w io.Writer, m blist.Model, index int, item blist.I
 // styles
 var (
 	baseListItemPaddingLeft = 20
-	titleStyle              = lg.NewStyle().AlignHorizontal(lg.Center)
+	titleStyle              = lg.NewStyle().PaddingLeft(20)
 	listItemStyle           = lg.NewStyle().PaddingLeft(baseListItemPaddingLeft)
 	selectedListItemStyle   = lg.NewStyle().Foreground(lg.Color(accentColor)).Bold(true).PaddingLeft(baseListItemPaddingLeft)
 	paginationStyle         = blist.DefaultStyles().PaginationStyle
 	helpStyle               = blist.DefaultStyles().HelpStyle
 
+	listStyle      = lg.NewStyle().AlignHorizontal(lg.Center)
 	footerStyle    = lg.NewStyle().Foreground(lg.Color(accentColor)).AlignHorizontal(lg.Center)
 	selectedStyle  = lg.NewStyle().Bold(true).Foreground(lg.Color(accentColor))
 	listEntryStyle = lg.NewStyle()
@@ -137,6 +138,7 @@ func initModel(lockfile *lib.Lockfile) model {
 	// toggling that item actually toggles first item from the unfiltered list
 	mList.SetFilteringEnabled(false)
 	mList.Styles.PaginationStyle = paginationStyle
+	mList.Styles.TitleBar.AlignHorizontal(lg.Center)
 	mList.Styles.HelpStyle = helpStyle
 
 	return model{
@@ -175,8 +177,9 @@ const accentColor = "#17d87e"
 
 func (m model) configsToInstallScreen() string {
 	list := m.mList.View()
+	var listStyle = listStyle.Width(m.termWidth)
 	var footerStyle = footerStyle.Width(m.termWidth)
-	return lg.JoinVertical(lg.Top, list, footerStyle.Render("\nSelect by pressing: <space>\nAccept by pressing: <enter>"))
+	return lg.JoinVertical(lg.Top, listStyle.Render(list), footerStyle.Render("\nSelect by pressing: <space>\nAccept by pressing: <enter>"))
 }
 
 func (m *model) nextScreen() {
