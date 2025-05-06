@@ -34,11 +34,12 @@ type screen int
 
 const (
 	configsToInstall screen = iota
+	pkgsToInstall
 )
 
 func isValidScreen(screenId int) bool {
 	switch screenId {
-	case int(configsToInstall):
+	case int(configsToInstall), int(pkgsToInstall):
 		return true
 
 	default:
@@ -171,6 +172,8 @@ func (m model) View() string {
 	switch m.currentScreen {
 	case configsToInstall:
 		s = m.configsToInstallScreen()
+	case pkgsToInstall:
+		s = m.pkgsToInstallScreen()
 	default:
 		panic("invalid screen id")
 	}
@@ -183,6 +186,13 @@ func (m model) configsToInstallScreen() string {
 	list := m.mList.View()
 	var listStyle = listStyle.Width(m.termWidth)
 	return lg.JoinVertical(lg.Top, listStyle.Render(list))
+}
+
+func (m model) pkgsToInstallScreen() string {
+	// TODO: start here
+	content := fmt.Sprintf("Hello, welcome to the second page, your choices were:\n\n%v", m.selected)
+	var listStyle = listStyle.Width(m.termWidth)
+	return lg.JoinVertical(lg.Top, listStyle.Render(content))
 }
 
 func (m *model) nextScreen() {
@@ -268,12 +278,22 @@ type helpKey struct {
 var help = []helpKey{
 	{
 		shortBinding: key.NewBinding(
-			key.WithKeys("Enter", "Tab"),
-			key.WithHelp("Enter/Tab", "Toggle"),
+			key.WithKeys("Space", "Tab"),
+			key.WithHelp("Space/Tab", "Toggle"),
 		),
 		longBinding: key.NewBinding(
-			key.WithKeys("Enter", "Tab"),
-			key.WithHelp("Enter/Tab", "Toggle current option"),
+			key.WithKeys("Space", "Tab"),
+			key.WithHelp("Space/Tab", "Toggle current option"),
+		),
+	},
+	{
+		shortBinding: key.NewBinding(
+			key.WithKeys("Enter"),
+			key.WithHelp("Enter", "Next"),
+		),
+		longBinding: key.NewBinding(
+			key.WithKeys("Enter"),
+			key.WithHelp("Enter", "Go to the next page"),
 		),
 	},
 }
