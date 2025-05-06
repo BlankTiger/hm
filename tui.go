@@ -8,6 +8,8 @@ import (
 	"os"
 	"slices"
 
+	"github.com/charmbracelet/bubbles/key"
+
 	blist "github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	lg "github.com/charmbracelet/lipgloss"
@@ -140,6 +142,8 @@ func initModel(lockfile *lib.Lockfile) model {
 	mList.Styles.PaginationStyle = paginationStyle
 	mList.Styles.TitleBar.AlignHorizontal(lg.Center)
 	mList.Styles.HelpStyle = helpStyle
+	mList.AdditionalFullHelpKeys = additionalFullHelpKeys
+	mList.AdditionalShortHelpKeys = additionalShortHelpKeys
 
 	return model{
 		lockfile: lockfile,
@@ -189,7 +193,15 @@ func (m *model) nextScreen() {
 	}
 }
 
-var widthOffset = 50
+func additionalFullHelpKeys() []key.Binding {
+	return longHelpKeys
+}
+
+func additionalShortHelpKeys() []key.Binding {
+	return shortHelpKeys
+}
+
+var widthOffset = 90
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg.(type) {
@@ -200,12 +212,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.termHeight = windowSize.Height
 		m.mList.SetWidth(m.termWidth)
 		m.mList.SetHeight(m.termHeight - 10)
-		return m, nil
+		m.mList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
+		return m, tea.ClearScreen
 
 	case tea.KeyMsg:
 		switch msg.(tea.KeyMsg).String() {
 
-		case "ctrl+c":
+		case "ctrl+c", "q":
 			return m, tea.Quit
 
 		case "j", "down":
@@ -248,7 +261,33 @@ func (m model) updateList() (res []blist.Item) {
 	return res
 }
 
+type helpKey struct {
+	shortBinding key.Binding
+	longBinding  key.Binding
+}
+
+var help = []helpKey{
+	{
+		shortBinding: key.NewBinding(
+			key.WithKeys("Enter", "Tab"),
+			key.WithHelp("Enter/Tab", "Toggle"),
+		),
+		longBinding: key.NewBinding(
+			key.WithKeys("Enter", "Tab"),
+			key.WithHelp("Enter/Tab", "Toggle current option"),
+		),
+	},
+}
+
+var shortHelpKeys = make([]key.Binding, len(help))
+var longHelpKeys = make([]key.Binding, len(help))
+
 func tuiMain(c *conf.Configuration) error {
+	for idx, h := range help {
+		shortHelpKeys[idx] = h.shortBinding
+		longHelpKeys[idx] = h.longBinding
+	}
+
 	lockAfter, err := lib.CreateLockBasedOnConfigs(c)
 	if err != nil {
 		c.Logger.Info("something went wrong while trying to create a new lockfile based on your config files in your source directory", "err", err)
