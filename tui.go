@@ -4,10 +4,11 @@ import (
 	conf "blanktiger/hm/configuration"
 	"blanktiger/hm/lib"
 	"fmt"
+	"io"
 	"os"
 	"slices"
-	"strings"
 
+	blist "github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	lg "github.com/charmbracelet/lipgloss"
 )
@@ -43,15 +44,68 @@ func isValidScreen(screenId int) bool {
 	}
 }
 
+type listItem string
+
+func (l listItem) FilterValue() string {
+	return string(l)
+}
+
+type itemDelegate struct{}
+
+func (d itemDelegate) Height() int                              { return 1 }
+func (d itemDelegate) Spacing() int                             { return 0 }
+func (d itemDelegate) Update(_ tea.Msg, _ *blist.Model) tea.Cmd { return nil }
+func (d itemDelegate) Render(w io.Writer, m blist.Model, index int, item blist.Item) {
+	i, ok := item.(listItem)
+	if !ok {
+		return
+	}
+
+	str := fmt.Sprintf("%s", i)
+	prefixSelected := "-> "
+	prefixNormal := "   "
+
+	fn := listItemStyle.Render
+	if index == m.Index() {
+		str = prefixSelected + str
+		fn = selectedListItemStyle.Render
+	} else {
+		// TODO: maybe just highlight the arrow instead of the whole line
+		str = prefixNormal + str
+	}
+
+	fmt.Fprint(w, fn(str))
+}
+
+// styles
+var (
+	baseListItemPaddingLeft = 20
+	titleStyle              = lg.NewStyle().AlignHorizontal(lg.Center)
+	listItemStyle           = lg.NewStyle().PaddingLeft(baseListItemPaddingLeft)
+	selectedListItemStyle   = lg.NewStyle().Foreground(lg.Color(accentColor)).Bold(true).PaddingLeft(baseListItemPaddingLeft)
+	paginationStyle         = blist.DefaultStyles().PaginationStyle
+	helpStyle               = blist.DefaultStyles().HelpStyle
+
+	tStyle         = lg.NewStyle().PaddingLeft(8).PaddingRight(8).AlignHorizontal(lg.Center)
+	fStyle         = lg.NewStyle().Foreground(lg.Color(accentColor)).AlignHorizontal(lg.Center)
+	selectedStyle  = lg.NewStyle().Bold(true).Foreground(lg.Color(accentColor))
+	listEntryStyle = lg.NewStyle()
+)
+
+// TODO: set up logging, logger should output everything to a file
+
 type model struct {
 	lockfile      *lib.Lockfile
 	configs       []lib.Config
 	selected      map[int]bool
 	currentScreen screen
 	cursor        int
-	marginLeft    int
-	marginTop     int
 	dbgMsg        string
+
+	mList      blist.Model
+	listHeight int
+	termWidth  int
+	termHeight int
 }
 
 func initModel(lockfile *lib.Lockfile) model {
@@ -64,10 +118,33 @@ func initModel(lockfile *lib.Lockfile) model {
 		selected[idx+offset] = false
 	}
 
+	allConfigs := slices.Concat(lockfile.Configs, lockfile.HiddenConfigs)
+	allConfigNames := []blist.Item{}
+	for _, cfg := range lockfile.Configs {
+		item := listItem("[*] " + cfg.Name)
+		allConfigNames = append(allConfigNames, item)
+	}
+	for _, cfg := range lockfile.HiddenConfigs {
+		item := listItem("[ ] " + cfg.Name)
+		allConfigNames = append(allConfigNames, item)
+	}
+
+	defaultWidth := 20
+	defaultListHeight := 15
+	mList := blist.New(allConfigNames, itemDelegate{}, defaultWidth, defaultListHeight)
+	mList.Title = "Configs - select the ones you wanna copy/symlink."
+	mList.SetShowStatusBar(false)
+	mList.SetFilteringEnabled(true)
+	mList.Styles.PaginationStyle = paginationStyle
+	mList.Styles.HelpStyle = helpStyle
+
 	return model{
 		lockfile: lockfile,
-		configs:  slices.Concat(lockfile.Configs, lockfile.HiddenConfigs),
+		configs:  allConfigs,
 		selected: selected,
+
+		listHeight: defaultListHeight,
+		mList:      mList,
 	}
 }
 
@@ -76,6 +153,13 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) View() string {
+	var borderedWindowStyle = lg.NewStyle().
+		Border(lg.RoundedBorder(), true).
+		BorderForeground(lg.Color(accentColor)).
+		Width(m.termWidth).
+		MarginLeft(widthOffset / 2)
+		// MarginTop(10 * m.termHeight / 100)
+
 	s := ""
 	switch m.currentScreen {
 	case configsToInstall:
@@ -88,53 +172,10 @@ func (m model) View() string {
 
 const accentColor = "#17d87e"
 
-var borderedWindowStyle = lg.NewStyle().
-	Border(lg.RoundedBorder(), true).
-	BorderForeground(lg.Color(accentColor))
-
-var titleStyle = lg.NewStyle().
-	PaddingLeft(8).
-	PaddingRight(8).
-	AlignHorizontal(lg.Center)
-
-var footerStyle = lg.NewStyle().
-	Inherit(titleStyle).
-	Foreground(lg.Color(accentColor))
-
-var selectedStyle = lg.NewStyle().
-	Bold(true).
-	Foreground(lg.Color(accentColor))
-
-var listEntryStyle = lg.NewStyle()
-
 func (m model) configsToInstallScreen() string {
-	titleTxt := "Configs - select the ones you wanna copy/symlink."
-	title := titleStyle.Render(titleTxt)
-	res := title + "\n\n\n"
-
-	list := ""
-	for idx, cfg := range m.configs {
-		if isSelected, ok := m.selected[idx]; ok {
-			selectionLine := ""
-			prefix := "\t\t   "
-			if idx == m.cursor {
-				prefix = selectedStyle.Render("\t\t-> ")
-			}
-			if isSelected {
-				selectionLine = fmt.Sprintf("[*] %s\n", cfg.Name)
-			} else {
-				selectionLine = fmt.Sprintf("[ ] %s\n", cfg.Name)
-			}
-			list += listEntryStyle.Render(prefix + selectionLine)
-		}
-	}
-	res += list
-
-	padding := strings.Repeat(" ", (len(title) - len(titleTxt)))
-	res += footerStyle.Render("\n" + padding + "Select by pressing: <space>\n" + padding + "Accept by pressing: <enter>")
-	res += m.dbgMsg
-
-	return res
+	list := m.mList.View()
+	var footerStyle = fStyle.Width(m.termWidth)
+	return lg.JoinVertical(lg.Top, list, footerStyle.Render("\nSelect by pressing: <space>\nAccept by pressing: <enter>"))
 }
 
 func (m *model) nextScreen() {
@@ -144,24 +185,18 @@ func (m *model) nextScreen() {
 	}
 }
 
+var widthOffset = 50
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg.(type) {
 
 	case tea.WindowSizeMsg:
 		windowSize := msg.(tea.WindowSizeMsg)
-
-		// view := m.View()
-		// height := strings.Count(view, "\n")
-		// width := 0
-		// for line := range strings.SplitSeq(view, "\n") {
-		// 	width = max(len(line), width)
-		// }
-		borderedWindowStyle = borderedWindowStyle.
-			Width(windowSize.Width).
-			Height(windowSize.Height).
-			Margin(50)
-
-		return m, tea.ClearScreen
+		m.termWidth = windowSize.Width - widthOffset
+		m.termHeight = windowSize.Height
+		m.mList.SetWidth(m.termWidth)
+		m.mList.SetHeight(m.termHeight - 10)
+		return m, nil
 
 	case tea.KeyMsg:
 		switch msg.(tea.KeyMsg).String() {
@@ -175,8 +210,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "k", "up":
 			m.cursor = max(m.cursor-1, 0)
 
-		case " ":
-			m.selected[m.cursor] = !m.selected[m.cursor]
+		case " ", "tab":
+			updatedListItems := m.updateList()
+			cmd := m.mList.SetItems(updatedListItems)
+			return m, cmd
 
 		case "enter":
 			m.nextScreen()
@@ -184,7 +221,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	return m, nil
+	var cmd tea.Cmd
+	m.mList, cmd = m.mList.Update(msg)
+	return m, cmd
+}
+
+func (m model) updateList() (res []blist.Item) {
+	cur := m.mList.Cursor()
+	m.selected[cur] = !m.selected[cur]
+
+	for idx := range m.mList.Items() {
+		if isSelected, ok := m.selected[idx]; ok {
+			cfgAtIdx := m.configs[idx]
+			if isSelected {
+				res = append(res, listItem("[*] "+cfgAtIdx.Name))
+			} else {
+				res = append(res, listItem("[ ] "+cfgAtIdx.Name))
+			}
+		}
+	}
+
+	return res
 }
 
 func tuiMain(c *conf.Configuration) error {
