@@ -182,8 +182,7 @@ const accentColor = "#17d87e"
 func (m model) configsToInstallScreen() string {
 	list := m.mList.View()
 	var listStyle = listStyle.Width(m.termWidth)
-	var footerStyle = footerStyle.Width(m.termWidth)
-	return lg.JoinVertical(lg.Top, listStyle.Render(list), footerStyle.Render("\nSelect by pressing: <space>\nAccept by pressing: <enter>"))
+	return lg.JoinVertical(lg.Top, listStyle.Render(list))
 }
 
 func (m *model) nextScreen() {
