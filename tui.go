@@ -211,7 +211,7 @@ func (m model) configsToInstallScreen() string {
 }
 
 func (m model) pkgsToInstallScreen() string {
-	list := m.configsList.View()
+	list := m.pkgsToInstallList.View()
 	var listStyle = listStyle.Width(m.termWidth)
 	return lg.JoinVertical(lg.Top, listStyle.Render(list))
 }
@@ -288,7 +288,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var cmd tea.Cmd
-	m.configsList, cmd = m.configsList.Update(msg)
+	switch m.currentScreen {
+	case configsToInstall:
+		m.configsList, cmd = m.configsList.Update(msg)
+	case pkgsToInstall:
+		m.pkgsToInstallList, cmd = m.pkgsToInstallList.Update(msg)
+	}
 	return m, cmd
 }
 
