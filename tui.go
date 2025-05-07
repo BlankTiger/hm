@@ -98,17 +98,25 @@ var (
 // TODO: set up logging, logger should output everything to a file
 
 type model struct {
-	lockfile      *lib.Lockfile
-	configs       []lib.Config
-	selected      map[int]bool
-	currentScreen screen
-	cursor        int
-	dbgMsg        string
+	lockfile *lib.Lockfile
 
-	mList      blist.Model
-	listHeight int
-	termWidth  int
-	termHeight int
+	// all configs from lockfile (non hidden + hidden)
+	configs []lib.Config
+	// index in the configs list -> is it selected
+	configSelection map[int]bool
+	// this will be filled after selection is done on the first screen
+	// right before going to the next screen
+	selectedConfigs []lib.Config
+	// list of all packages that would be installed from the selected configs
+	pkgsToInstall []lib.InstallInstruction
+
+	currentScreen screen
+	termWidth     int
+	termHeight    int
+
+	configsList       blist.Model
+	pkgsToInstallList blist.Model
+	listHeight        int
 }
 
 func initModel(lockfile *lib.Lockfile) model {
