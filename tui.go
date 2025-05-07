@@ -267,11 +267,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		windowSize := msg.(tea.WindowSizeMsg)
-		m.termWidth = windowSize.Width - widthOffset
-		m.termHeight = windowSize.Height
-		m.mList.SetWidth(m.termWidth)
-		m.mList.SetHeight(m.termHeight - 10)
-		m.mList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
+		m.updateSize(windowSize)
 		return m, tea.ClearScreen
 
 	case tea.KeyMsg:
@@ -282,7 +278,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "tab":
 			updatedListItems := m.updateList()
-			cmd := m.mList.SetItems(updatedListItems)
+			cmd := m.configsList.SetItems(updatedListItems)
 			return m, cmd
 
 		case " ":
@@ -292,16 +288,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var cmd tea.Cmd
-	m.mList, cmd = m.mList.Update(msg)
+	m.configsList, cmd = m.configsList.Update(msg)
 	return m, cmd
 }
 
-func (m model) updateList() (res []blist.Item) {
-	cur := m.mList.GlobalIndex()
-	m.selected[cur] = !m.selected[cur]
+func (m model) updateSize(windowSize tea.WindowSizeMsg) {
+	m.termWidth = windowSize.Width - widthOffset
+	m.termHeight = windowSize.Height
+	m.configsList.SetWidth(m.termWidth)
+	m.configsList.SetHeight(m.termHeight - 10)
+	m.pkgsToInstallList.SetWidth(m.termWidth)
+	m.pkgsToInstallList.SetHeight(m.termHeight - 10)
+	m.configsList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
+}
 
-	for idx := range m.mList.Items() {
-		if isSelected, ok := m.selected[idx]; ok {
+func (m model) updateList() (res []blist.Item) {
+	cur := m.configsList.GlobalIndex()
+	m.configSelection[cur] = !m.configSelection[cur]
+
+	for idx := range m.configsList.Items() {
+		if isSelected, ok := m.configSelection[idx]; ok {
 			cfgAtIdx := m.configs[idx]
 			if isSelected {
 				res = append(res, listItem("[*] "+cfgAtIdx.Name))
