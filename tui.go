@@ -205,19 +205,47 @@ func (m model) View() string {
 const accentColor = "#17d87e"
 
 func (m model) configsToInstallScreen() string {
-	list := m.mList.View()
+	list := m.configsList.View()
 	var listStyle = listStyle.Width(m.termWidth)
 	return lg.JoinVertical(lg.Top, listStyle.Render(list))
 }
 
 func (m model) pkgsToInstallScreen() string {
-	// TODO: start here
-	content := fmt.Sprintf("Hello, welcome to the second page, your choices were:\n\n%v", m.selected)
+	list := m.configsList.View()
 	var listStyle = listStyle.Width(m.termWidth)
-	return lg.JoinVertical(lg.Top, listStyle.Render(content))
+	return lg.JoinVertical(lg.Top, listStyle.Render(list))
 }
 
 func (m *model) nextScreen() {
+	switch m.currentScreen {
+	case configsToInstall:
+		listItems := []blist.Item{}
+		for idx, isSelected := range m.configSelection {
+			if isSelected {
+				cfg := m.configs[idx]
+				m.selectedConfigs = append(m.selectedConfigs, cfg)
+				m.pkgsToInstall = slices.Concat(m.pkgsToInstall, cfg.Requirements.Dependencies)
+				for _, pkgs := range cfg.Requirements.Dependencies {
+					listItems = append(listItems, listItem(pkgs.Pkg))
+				}
+				if cfg.Requirements.Install != nil {
+					m.pkgsToInstall = append(m.pkgsToInstall, *cfg.Requirements.Install)
+					listItems = append(listItems, listItem(cfg.Requirements.Install.Pkg))
+				}
+			}
+		}
+
+		m.pkgsToInstallList.SetItems(listItems)
+		// TODO: save the result from the screen back to lockfile:
+		// - move selected configs into configs
+		// - move unselected configs into HiddenConfigs
+		// - dont forget that hidden configs by default are prefix with "."
+		//   in the filesystem, so we will either have to edit the fs structure
+		//   or not -> install that config this one time and give the option
+		//   to save users choice which would remove the "." prefix
+	case pkgsToInstall:
+	}
+
 	newScreenId := int(m.currentScreen) + 1
 	if isValidScreen(newScreenId) {
 		m.currentScreen = screen(newScreenId)
