@@ -142,23 +142,39 @@ func initModel(lockfile *lib.Lockfile) model {
 
 	defaultWidth := 20
 	defaultListHeight := 15
-	mList := blist.New(allConfigNames, itemDelegate{}, defaultWidth, defaultListHeight)
-	mList.Title = "Configs - select the ones you wanna copy/symlink."
-	mList.SetShowStatusBar(false)
-	mList.SetFilteringEnabled(true)
-	mList.Styles.PaginationStyle = paginationStyle
-	mList.Styles.TitleBar.AlignHorizontal(lg.Center)
-	mList.Styles.HelpStyle = helpStyle
-	mList.AdditionalFullHelpKeys = additionalFullHelpKeys
-	mList.AdditionalShortHelpKeys = additionalShortHelpKeys
+
+	configsList := blist.New(allConfigNames, itemDelegate{}, defaultWidth, defaultListHeight)
+	{
+		configsList.Title = "Configs - select the ones you wanna copy/symlink."
+		configsList.SetShowStatusBar(false)
+		configsList.SetFilteringEnabled(true)
+		configsList.Styles.PaginationStyle = paginationStyle
+		configsList.Styles.TitleBar.AlignHorizontal(lg.Center)
+		configsList.Styles.HelpStyle = helpStyle
+		configsList.AdditionalFullHelpKeys = additionalFullHelpKeys
+		configsList.AdditionalShortHelpKeys = additionalShortHelpKeys
+	}
+
+	pkgsToInstallList := blist.New([]blist.Item{}, itemDelegate{}, defaultWidth, defaultListHeight)
+	{
+		pkgsToInstallList.Title = "Packages (config dependencies) - select ones that should be installed."
+		pkgsToInstallList.SetShowStatusBar(false)
+		pkgsToInstallList.SetFilteringEnabled(true)
+		pkgsToInstallList.Styles.PaginationStyle = paginationStyle
+		pkgsToInstallList.Styles.TitleBar.AlignHorizontal(lg.Center)
+		pkgsToInstallList.Styles.HelpStyle = helpStyle
+		pkgsToInstallList.AdditionalFullHelpKeys = additionalFullHelpKeys
+		pkgsToInstallList.AdditionalShortHelpKeys = additionalShortHelpKeys
+	}
 
 	return model{
-		lockfile: lockfile,
-		configs:  allConfigs,
-		selected: selected,
+		lockfile:        lockfile,
+		configs:         allConfigs,
+		configSelection: selected,
 
-		listHeight: defaultListHeight,
-		mList:      mList,
+		listHeight:        defaultListHeight,
+		configsList:       configsList,
+		pkgsToInstallList: pkgsToInstallList,
 	}
 }
 
