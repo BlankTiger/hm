@@ -137,9 +137,7 @@ func initModel(lockfile *lib.Lockfile) model {
 	mList := blist.New(allConfigNames, itemDelegate{}, defaultWidth, defaultListHeight)
 	mList.Title = "Configs - select the ones you wanna copy/symlink."
 	mList.SetShowStatusBar(false)
-	// TODO: make this work, currently if I have list filtered to one item,
-	// toggling that item actually toggles first item from the unfiltered list
-	mList.SetFilteringEnabled(false)
+	mList.SetFilteringEnabled(true)
 	mList.Styles.PaginationStyle = paginationStyle
 	mList.Styles.TitleBar.AlignHorizontal(lg.Center)
 	mList.Styles.HelpStyle = helpStyle
@@ -230,18 +228,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 
-		case "j", "down":
-			m.cursor = min(m.cursor+1, len(m.configs)-1)
-
-		case "k", "up":
-			m.cursor = max(m.cursor-1, 0)
-
-		case " ", "tab":
+		case "tab":
 			updatedListItems := m.updateList()
 			cmd := m.mList.SetItems(updatedListItems)
 			return m, cmd
 
-		case "enter":
+		case " ":
 			m.nextScreen()
 
 		}
@@ -253,7 +245,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) updateList() (res []blist.Item) {
-	cur := m.mList.Cursor()
+	cur := m.mList.GlobalIndex()
 	m.selected[cur] = !m.selected[cur]
 
 	for idx := range m.mList.Items() {
@@ -278,22 +270,22 @@ type helpKey struct {
 var help = []helpKey{
 	{
 		shortBinding: key.NewBinding(
-			key.WithKeys("Space", "Tab"),
-			key.WithHelp("Space/Tab", "Toggle"),
+			key.WithKeys("Tab"),
+			key.WithHelp("Tab", "Toggle"),
 		),
 		longBinding: key.NewBinding(
-			key.WithKeys("Space", "Tab"),
-			key.WithHelp("Space/Tab", "Toggle current option"),
+			key.WithKeys("Tab"),
+			key.WithHelp("Tab", "Toggle current option"),
 		),
 	},
 	{
 		shortBinding: key.NewBinding(
-			key.WithKeys("Enter"),
-			key.WithHelp("Enter", "Next"),
+			key.WithKeys("Space"),
+			key.WithHelp("Space", "Next"),
 		),
 		longBinding: key.NewBinding(
-			key.WithKeys("Enter"),
-			key.WithHelp("Enter", "Go to the next page"),
+			key.WithKeys("Space"),
+			key.WithHelp("Space", "Go to the next page"),
 		),
 	},
 }
