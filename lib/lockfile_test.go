@@ -15,7 +15,7 @@ func createCfg(name string) Config {
 		Requirements: requirements{
 			Name:         name,
 			Install:      nil,
-			Dependencies: []installInstruction{},
+			Dependencies: []InstallInstruction{},
 		},
 	}
 }
@@ -162,7 +162,7 @@ func TestLockfileDiffVersionChanged(t *testing.T) {
 }
 
 var commonGlobalDependency = globalDependency{
-	Instruction: &installInstruction{
+	Instruction: &InstallInstruction{
 		Method: instructions.System,
 		Pkg:    "fish",
 	},
