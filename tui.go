@@ -81,15 +81,15 @@ func (d itemDelegate) Render(w io.Writer, m blist.Model, index int, item blist.I
 
 // styles
 var (
-	baseListItemPaddingLeft = 20
-	titleStyle              = lg.NewStyle().PaddingLeft(20)
+	baseListItemPaddingLeft = 0
+	titleStyle              = lg.NewStyle()
 	listItemStyle           = lg.NewStyle().PaddingLeft(baseListItemPaddingLeft)
 	selectedListItemStyle   = lg.NewStyle().Foreground(lg.Color(accentColor)).Bold(true).PaddingLeft(baseListItemPaddingLeft)
 	paginationStyle         = blist.DefaultStyles().PaginationStyle
 	helpStyle               = blist.DefaultStyles().HelpStyle
 
-	listStyle      = lg.NewStyle().AlignHorizontal(lg.Center)
-	footerStyle    = lg.NewStyle().Foreground(lg.Color(accentColor)).AlignHorizontal(lg.Center)
+	listStyle      = lg.NewStyle()
+	footerStyle    = lg.NewStyle().Foreground(lg.Color(accentColor))
 	selectedStyle  = lg.NewStyle().Bold(true).Foreground(lg.Color(accentColor))
 	listEntryStyle = lg.NewStyle()
 )
@@ -152,7 +152,8 @@ func initModel(lockfile *lib.Lockfile) model {
 		configsList.SetShowStatusBar(false)
 		configsList.SetFilteringEnabled(true)
 		configsList.Styles.PaginationStyle = paginationStyle
-		configsList.Styles.TitleBar.AlignHorizontal(lg.Center)
+		// configsList.Styles.TitleBar.AlignHorizontal(lg.Center)
+		// configsList.Styles.TitleBar = titleStyle
 		configsList.Styles.HelpStyle = helpStyle
 		configsList.AdditionalFullHelpKeys = additionalFullHelpKeys
 		configsList.AdditionalShortHelpKeys = additionalShortHelpKeys
@@ -189,7 +190,7 @@ func initModel(lockfile *lib.Lockfile) model {
 		globalDepsList.SetShowStatusBar(false)
 		globalDepsList.SetFilteringEnabled(true)
 		globalDepsList.Styles.PaginationStyle = paginationStyle
-		globalDepsList.Styles.TitleBar.AlignHorizontal(lg.Center)
+		// globalDepsList.Styles.TitleBar.AlignHorizontal(lg.Center)
 		globalDepsList.Styles.HelpStyle = helpStyle
 		globalDepsList.AdditionalFullHelpKeys = additionalFullHelpKeys
 		globalDepsList.AdditionalShortHelpKeys = additionalShortHelpKeys
@@ -210,16 +211,13 @@ func initModel(lockfile *lib.Lockfile) model {
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.ClearScreen
+	fmt.Println()
+	return nil
 }
 
 func (m model) View() string {
-	var borderedWindowStyle = lg.NewStyle().
-		Border(lg.RoundedBorder(), true).
-		BorderForeground(lg.Color(accentColor)).
-		Width(m.termWidth).
-		MarginLeft(widthOffset / 2)
-		// MarginTop(10 * m.termHeight / 100)
+	var windowStyle = lg.NewStyle().
+		Width(m.termWidth)
 
 	s := ""
 	switch m.currentScreen {
@@ -230,7 +228,7 @@ func (m model) View() string {
 	default:
 		panic("invalid screen id")
 	}
-	return borderedWindowStyle.Render(s)
+	return windowStyle.Render(s)
 }
 
 const accentColor = "#17d87e"
@@ -262,15 +260,13 @@ func additionalShortHelpKeys() []key.Binding {
 	return shortHelpKeys
 }
 
-var widthOffset = 90
-
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg.(type) {
 
 	case tea.WindowSizeMsg:
 		windowSize := msg.(tea.WindowSizeMsg)
 		m.updateSize(windowSize)
-		return m, tea.ClearScreen
+		return m, nil
 
 	case tea.KeyMsg:
 		switch msg.(tea.KeyMsg).String() {
@@ -305,14 +301,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) updateSize(windowSize tea.WindowSizeMsg) {
-	m.termWidth = windowSize.Width - widthOffset
+func (m *model) updateSize(windowSize tea.WindowSizeMsg) {
+	m.termWidth = windowSize.Width
 	m.termHeight = windowSize.Height
 	m.configsList.SetWidth(m.termWidth)
 	m.configsList.SetHeight(m.termHeight - 10)
 	m.globalDepsList.SetWidth(m.termWidth)
 	m.globalDepsList.SetHeight(m.termHeight - 10)
+	m.configsList.Styles.TitleBar.Width(m.termWidth)
+	m.configsList.Styles.Title.Width(m.termWidth)
 	m.configsList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
+	m.globalDepsList.Styles.TitleBar.Width(m.termWidth)
+	m.globalDepsList.Styles.Title.Width(m.termWidth)
+	m.globalDepsList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
 }
 
 func (m model) updateAfterSelectingInList() []blist.Item {
