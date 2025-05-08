@@ -19,9 +19,6 @@ import (
 // - [x] I want a list of all configs with information on if they would be copied over
 //   with an ability to change that fact by selecting or unselecting them in a list
 //
-// - [ ] I want a list of all packages that would be installed, etc same thing as above,
-//   same thing for packages that would be uninstalled
-//
 // - [ ] I want a list of all global dependencies that would be installed
 //
 // - [ ] An editor of global dependencies list (they would be permanently stored on disk
