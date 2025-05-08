@@ -2,6 +2,7 @@ package main
 
 import (
 	conf "blanktiger/hm/configuration"
+	"blanktiger/hm/instructions"
 	"blanktiger/hm/lib"
 	"fmt"
 	"io"
@@ -105,8 +106,12 @@ type model struct {
 	// this will be filled after selection is done on the first screen
 	// right before going to the next screen
 	selectedConfigs []lib.Config
-	// global dependency package name -> index in the original lockfile.GlobalDependencies list
-	globalDepToIdx map[string]int
+
+	// this is all global dependencies that are split, so that when we iterate
+	// it's like all of them are on a separate line in the DEPENDENCIES file
+	flatGlobalDeps []lib.GlobalDependency
+	// index in the global dependencies list -> is it selected
+	globalDepsSelection map[int]bool
 
 	currentScreen screen
 	termWidth     int
@@ -153,14 +158,28 @@ func initModel(lockfile *lib.Lockfile) model {
 		configsList.AdditionalShortHelpKeys = additionalShortHelpKeys
 	}
 
-	globalDepToIdx := make(map[string]int)
+	globalDepsSelection := make(map[int]bool)
 	globalDepNames := []blist.Item{}
-	for idx, dep := range lockfile.GlobalDependencies {
-		// TODO: check if it works without any spaces
-		for subDep := range strings.SplitSeq(dep.Instruction.Pkg, " ") {
-			globalDepToIdx[subDep] = idx
-			depListItem := listItem("[*] " + subDep)
-			globalDepNames = append(globalDepNames, depListItem)
+	flatGlobalDeps := []lib.GlobalDependency{}
+	depIdx := 0
+	for _, dep := range lockfile.GlobalDependencies {
+		if dep.Instruction.Method == instructions.Bash {
+			flatGlobalDeps = append(flatGlobalDeps, dep)
+			globalDepNames = append(globalDepNames, listItem("[*] "+formatGlobalDep(dep)))
+			globalDepsSelection[depIdx] = true
+			depIdx++
+			continue
+		}
+
+		for subDepPkg := range strings.SplitSeq(dep.Instruction.Pkg, " ") {
+			subDep := dep
+			inst := *subDep.Instruction
+			subDep.Instruction = &inst
+			subDep.Instruction.Pkg = subDepPkg
+			flatGlobalDeps = append(flatGlobalDeps, subDep)
+			globalDepNames = append(globalDepNames, listItem("[*] "+formatGlobalDep(subDep)))
+			globalDepsSelection[depIdx] = true
+			depIdx++
 		}
 	}
 
@@ -180,7 +199,9 @@ func initModel(lockfile *lib.Lockfile) model {
 		lockfile:        lockfile,
 		configs:         allConfigs,
 		configSelection: selected,
-		globalDepToIdx:  globalDepToIdx,
+
+		flatGlobalDeps:      flatGlobalDeps,
+		globalDepsSelection: globalDepsSelection,
 
 		listHeight:     defaultListHeight,
 		configsList:    configsList,
@@ -258,8 +279,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case "tab":
-			updatedListItems := m.updateList()
-			cmd := m.configsList.SetItems(updatedListItems)
+			updatedListItems := m.updateAfterSelectingInList()
+			var cmd tea.Cmd
+			switch m.currentScreen {
+			case configsScreen:
+				cmd = m.configsList.SetItems(updatedListItems)
+			case globalDepsScreen:
+				cmd = m.globalDepsList.SetItems(updatedListItems)
+			}
 			return m, cmd
 
 		case " ":
@@ -288,22 +315,51 @@ func (m model) updateSize(windowSize tea.WindowSizeMsg) {
 	m.configsList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
 }
 
-func (m model) updateList() (res []blist.Item) {
-	cur := m.configsList.GlobalIndex()
-	m.configSelection[cur] = !m.configSelection[cur]
+func (m model) updateAfterSelectingInList() []blist.Item {
+	switch m.currentScreen {
+	case configsScreen:
+		cur := m.configsList.GlobalIndex()
+		m.configSelection[cur] = !m.configSelection[cur]
 
-	for idx := range m.configsList.Items() {
-		if isSelected, ok := m.configSelection[idx]; ok {
-			cfgAtIdx := m.configs[idx]
-			if isSelected {
-				res = append(res, listItem("[*] "+cfgAtIdx.Name))
-			} else {
-				res = append(res, listItem("[ ] "+cfgAtIdx.Name))
+		updatedItems := []blist.Item{}
+		for idx := range m.configsList.Items() {
+			if isSelected, ok := m.configSelection[idx]; ok {
+				cfgAtIdx := m.configs[idx]
+				if isSelected {
+					updatedItems = append(updatedItems, listItem("[*] "+cfgAtIdx.Name))
+				} else {
+					updatedItems = append(updatedItems, listItem("[ ] "+cfgAtIdx.Name))
+				}
 			}
 		}
-	}
 
-	return res
+		return updatedItems
+
+	case globalDepsScreen:
+		cur := m.globalDepsList.GlobalIndex()
+		m.globalDepsSelection[cur] = !m.globalDepsSelection[cur]
+
+		updatedItems := []blist.Item{}
+		for idx := range m.globalDepsList.Items() {
+			if isSelected, ok := m.globalDepsSelection[idx]; ok {
+				dep := m.flatGlobalDeps[idx]
+				if isSelected {
+					updatedItems = append(updatedItems, listItem("[*] "+formatGlobalDep(dep)))
+				} else {
+					updatedItems = append(updatedItems, listItem("[ ] "+formatGlobalDep(dep)))
+				}
+			}
+		}
+
+		return updatedItems
+
+	default:
+		panic("we somehow got to an incorrect screen, exiting")
+	}
+}
+
+func formatGlobalDep(dep lib.GlobalDependency) string {
+	return string(dep.Instruction.Method) + ":" + dep.Instruction.Pkg
 }
 
 type helpKey struct {
