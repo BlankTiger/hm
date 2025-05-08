@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"slices"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 
@@ -30,13 +31,13 @@ import (
 type screen int
 
 const (
-	configsToInstall screen = iota
-	pkgsToInstall
+	configsScreen screen = iota
+	globalDepsScreen
 )
 
 func isValidScreen(screenId int) bool {
 	switch screenId {
-	case int(configsToInstall), int(pkgsToInstall):
+	case int(configsScreen), int(globalDepsScreen):
 		return true
 
 	default:
@@ -104,16 +105,16 @@ type model struct {
 	// this will be filled after selection is done on the first screen
 	// right before going to the next screen
 	selectedConfigs []lib.Config
-	// list of all packages that would be installed from the selected configs
-	pkgsToInstall []lib.InstallInstruction
+	// global dependency package name -> index in the original lockfile.GlobalDependencies list
+	globalDepToIdx map[string]int
 
 	currentScreen screen
 	termWidth     int
 	termHeight    int
 
-	configsList       blist.Model
-	pkgsToInstallList blist.Model
-	listHeight        int
+	configsList    blist.Model
+	globalDepsList blist.Model
+	listHeight     int
 }
 
 func initModel(lockfile *lib.Lockfile) model {
@@ -201,9 +202,9 @@ func (m model) View() string {
 
 	s := ""
 	switch m.currentScreen {
-	case configsToInstall:
+	case configsScreen:
 		s = m.configsToInstallScreen()
-	case pkgsToInstall:
+	case globalDepsScreen:
 		s = m.pkgsToInstallScreen()
 	default:
 		panic("invalid screen id")
@@ -269,10 +270,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	switch m.currentScreen {
-	case configsToInstall:
+	case configsScreen:
 		m.configsList, cmd = m.configsList.Update(msg)
-	case pkgsToInstall:
-		m.pkgsToInstallList, cmd = m.pkgsToInstallList.Update(msg)
+	case globalDepsScreen:
+		m.globalDepsList, cmd = m.globalDepsList.Update(msg)
 	}
 	return m, cmd
 }
@@ -282,8 +283,8 @@ func (m model) updateSize(windowSize tea.WindowSizeMsg) {
 	m.termHeight = windowSize.Height
 	m.configsList.SetWidth(m.termWidth)
 	m.configsList.SetHeight(m.termHeight - 10)
-	m.pkgsToInstallList.SetWidth(m.termWidth)
-	m.pkgsToInstallList.SetHeight(m.termHeight - 10)
+	m.globalDepsList.SetWidth(m.termWidth)
+	m.globalDepsList.SetHeight(m.termHeight - 10)
 	m.configsList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
 }
 
