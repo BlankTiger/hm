@@ -74,32 +74,32 @@ type requirements struct {
 	// instead we should just pass the config everywhere with all the data
 	// (probably)
 	Name         string               `json:"name"`
-	Install      *InstallInstruction  `json:"installInstructions"`
-	Dependencies []InstallInstruction `json:"dependencies"`
+	Install      *installInstruction  `json:"installInstructions"`
+	Dependencies []installInstruction `json:"dependencies"`
 }
 
 func newRequirements() requirements {
 	return requirements{
 		Name:         "",
 		Install:      nil,
-		Dependencies: []InstallInstruction{},
+		Dependencies: []installInstruction{},
 	}
 }
 
-type InstallInstruction struct {
+type installInstruction struct {
 	Method i.InstallMethod `json:"method"`
 	Pkg    string          `json:"pkg"`
 }
 
-func newInstallInstruction() InstallInstruction {
-	return InstallInstruction{
+func newInstallInstruction() installInstruction {
+	return installInstruction{
 		Method: i.System,
 		Pkg:    "",
 	}
 }
 
-func parseInstallInstructions(path string) (res *InstallInstruction, err error) {
-	res = &InstallInstruction{}
+func parseInstallInstructions(path string) (res *installInstruction, err error) {
+	res = &installInstruction{}
 	file, err := os.Open(path + INSTALL_PATH_POSTFIX)
 	if err != nil {
 		// NOTE: file not existing is not an error in this case (can have config
@@ -131,7 +131,7 @@ func parseInstallInstructions(path string) (res *InstallInstruction, err error) 
 	return res, nil
 }
 
-func parseInstallInstruction(inst string) (res *InstallInstruction, err error) {
+func parseInstallInstruction(inst string) (res *installInstruction, err error) {
 	newII := newInstallInstruction()
 	res = &newII
 
@@ -161,8 +161,8 @@ func parseInstallInstruction(inst string) (res *InstallInstruction, err error) {
 	return res, nil
 }
 
-func parseDependencies(path string) (res []InstallInstruction, err error) {
-	res = []InstallInstruction{}
+func parseDependencies(path string) (res []installInstruction, err error) {
+	res = []installInstruction{}
 	file, err := os.Open(path + DEPENDENCIES_PATH_POSTFIX)
 	if err != nil {
 		// NOTE: file not existing is not an error in this case (can have

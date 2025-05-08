@@ -85,7 +85,7 @@ func now() string {
 	return time.Now().UTC().Format(time.DateTime)
 }
 
-func installDependencies(dependencies []InstallInstruction) error {
+func installDependencies(dependencies []installInstruction) error {
 	for _, dep := range dependencies {
 		_, err := install(dep)
 		if err != nil {
@@ -95,7 +95,7 @@ func installDependencies(dependencies []InstallInstruction) error {
 	return nil
 }
 
-func install(inst InstallInstruction) (cmd string, err error) {
+func install(inst installInstruction) (cmd string, err error) {
 	Assert(!inst.Method.IsEmpty(), fmt.Sprintf("at this point we should always have valid installation instructions, got: '%v'", inst))
 
 	Logger.Info("going to install a pkg", "method", inst.Method, "pkg", inst.Pkg)
@@ -196,7 +196,7 @@ func uninstallForCfg(cfg Config) *installInfo {
 
 }
 
-func uninstall(inst *InstallInstruction) (cmd string, err error) {
+func uninstall(inst *installInstruction) (cmd string, err error) {
 	Assert(!inst.Method.IsEmpty(), fmt.Sprintf("at this point we should always have valid uninstall instructions, got: '%v'", inst))
 
 	Logger.Info("going to uninstall a pkg", "method", inst.Method, "pkg", inst.Pkg)

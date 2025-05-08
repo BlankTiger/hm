@@ -26,7 +26,7 @@ type Lockfile struct {
 }
 
 type globalDependency struct {
-	Instruction *InstallInstruction `json:"installInstruction"`
+	Instruction *installInstruction `json:"installInstruction"`
 	InstallInfo installInfo         `json:"installInfo"`
 }
 
@@ -48,7 +48,7 @@ func ContainsGlobalDep(deps []globalDependency, dep globalDependency) bool {
 	return false
 }
 
-func newGlobalDependency(inst *InstallInstruction) globalDependency {
+func newGlobalDependency(inst *installInstruction) globalDependency {
 	return globalDependency{
 		Instruction: inst,
 		InstallInfo: installInfo{},
