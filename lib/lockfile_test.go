@@ -37,8 +37,8 @@ func TestLockfileDiffingAddedConfigs(t *testing.T) {
 		AddedConfigs:             []Config{newCfg},
 		RemovedConfigs:           []Config{},
 		PreviouslyRemovedConfigs: []Config{},
-		AddedGlobalDeps:          []globalDependency{},
-		RemovedGlobalDeps:        []globalDependency{},
+		AddedGlobalDeps:          []GlobalDependency{},
+		RemovedGlobalDeps:        []GlobalDependency{},
 		ModeChanged:              false,
 		VersionChanged:           false,
 	}
@@ -59,8 +59,8 @@ func TestLockfileDiffRemovedConfigs(t *testing.T) {
 		AddedConfigs:             []Config{},
 		RemovedConfigs:           []Config{commonCfg},
 		PreviouslyRemovedConfigs: []Config{},
-		AddedGlobalDeps:          []globalDependency{},
-		RemovedGlobalDeps:        []globalDependency{},
+		AddedGlobalDeps:          []GlobalDependency{},
+		RemovedGlobalDeps:        []GlobalDependency{},
 		ModeChanged:              false,
 		VersionChanged:           false,
 	}
@@ -81,8 +81,8 @@ func TestLockfileDiffPreviouslyRemovedConfigs(t *testing.T) {
 		AddedConfigs:             []Config{commonCfg},
 		RemovedConfigs:           []Config{},
 		PreviouslyRemovedConfigs: []Config{commonCfg},
-		AddedGlobalDeps:          []globalDependency{},
-		RemovedGlobalDeps:        []globalDependency{},
+		AddedGlobalDeps:          []GlobalDependency{},
+		RemovedGlobalDeps:        []GlobalDependency{},
 		ModeChanged:              false,
 		VersionChanged:           false,
 	}
@@ -109,8 +109,8 @@ func TestLockfileDiffModeChanged(t *testing.T) {
 		PreviouslyRemovedConfigs: []Config{},
 		ModeChanged:              true,
 		VersionChanged:           false,
-		AddedGlobalDeps:          []globalDependency{},
-		RemovedGlobalDeps:        []globalDependency{},
+		AddedGlobalDeps:          []GlobalDependency{},
+		RemovedGlobalDeps:        []GlobalDependency{},
 	}
 	expectedDiffB := lockfileDiff{
 		AddedConfigs:             []Config{},
@@ -118,8 +118,8 @@ func TestLockfileDiffModeChanged(t *testing.T) {
 		PreviouslyRemovedConfigs: []Config{},
 		ModeChanged:              false,
 		VersionChanged:           false,
-		AddedGlobalDeps:          []globalDependency{},
-		RemovedGlobalDeps:        []globalDependency{},
+		AddedGlobalDeps:          []GlobalDependency{},
+		RemovedGlobalDeps:        []GlobalDependency{},
 	}
 	assert.Equal(t, expectedDiffA, diffA)
 	assert.Equal(t, expectedDiffB, diffB)
@@ -145,8 +145,8 @@ func TestLockfileDiffVersionChanged(t *testing.T) {
 		PreviouslyRemovedConfigs: []Config{},
 		ModeChanged:              false,
 		VersionChanged:           false,
-		AddedGlobalDeps:          []globalDependency{},
-		RemovedGlobalDeps:        []globalDependency{},
+		AddedGlobalDeps:          []GlobalDependency{},
+		RemovedGlobalDeps:        []GlobalDependency{},
 	}
 	expectedDiffB := lockfileDiff{
 		AddedConfigs:             []Config{},
@@ -154,14 +154,14 @@ func TestLockfileDiffVersionChanged(t *testing.T) {
 		PreviouslyRemovedConfigs: []Config{},
 		ModeChanged:              false,
 		VersionChanged:           true,
-		AddedGlobalDeps:          []globalDependency{},
-		RemovedGlobalDeps:        []globalDependency{},
+		AddedGlobalDeps:          []GlobalDependency{},
+		RemovedGlobalDeps:        []GlobalDependency{},
 	}
 	assert.Equal(t, expectedDiffA, diffA)
 	assert.Equal(t, expectedDiffB, diffB)
 }
 
-var commonGlobalDependency = globalDependency{
+var commonGlobalDependency = GlobalDependency{
 	Instruction: &installInstruction{
 		Method: instructions.System,
 		Pkg:    "fish",
@@ -179,10 +179,10 @@ var commonGlobalDependency = globalDependency{
 
 func TestLockfileDiffAddedGlobalDeps(t *testing.T) {
 	lockBefore := Lockfile{
-		GlobalDependencies: []globalDependency{},
+		GlobalDependencies: []GlobalDependency{},
 	}
 	lockAfter := Lockfile{
-		GlobalDependencies: []globalDependency{commonGlobalDependency},
+		GlobalDependencies: []GlobalDependency{commonGlobalDependency},
 	}
 
 	diff := DiffLocks(lockBefore, lockAfter)
@@ -191,8 +191,8 @@ func TestLockfileDiffAddedGlobalDeps(t *testing.T) {
 		AddedConfigs:             []Config{},
 		RemovedConfigs:           []Config{},
 		PreviouslyRemovedConfigs: []Config{},
-		AddedGlobalDeps:          []globalDependency{commonGlobalDependency},
-		RemovedGlobalDeps:        []globalDependency{},
+		AddedGlobalDeps:          []GlobalDependency{commonGlobalDependency},
+		RemovedGlobalDeps:        []GlobalDependency{},
 		ModeChanged:              false,
 		VersionChanged:           false,
 	}
@@ -201,10 +201,10 @@ func TestLockfileDiffAddedGlobalDeps(t *testing.T) {
 
 func TestLockfileDiffRemovedGlobalDeps(t *testing.T) {
 	lockBefore := Lockfile{
-		GlobalDependencies: []globalDependency{commonGlobalDependency},
+		GlobalDependencies: []GlobalDependency{commonGlobalDependency},
 	}
 	lockAfter := Lockfile{
-		GlobalDependencies: []globalDependency{},
+		GlobalDependencies: []GlobalDependency{},
 	}
 
 	diff := DiffLocks(lockBefore, lockAfter)
@@ -213,8 +213,8 @@ func TestLockfileDiffRemovedGlobalDeps(t *testing.T) {
 		AddedConfigs:             []Config{},
 		RemovedConfigs:           []Config{},
 		PreviouslyRemovedConfigs: []Config{},
-		AddedGlobalDeps:          []globalDependency{},
-		RemovedGlobalDeps:        []globalDependency{commonGlobalDependency},
+		AddedGlobalDeps:          []GlobalDependency{},
+		RemovedGlobalDeps:        []GlobalDependency{commonGlobalDependency},
 		ModeChanged:              false,
 		VersionChanged:           false,
 	}
@@ -226,7 +226,7 @@ func TestUpdateLockfileInstallInfo(t *testing.T) {
 	lock := Lockfile{
 		Version:            "",
 		Mode:               "",
-		GlobalDependencies: []globalDependency{},
+		GlobalDependencies: []GlobalDependency{},
 		Configs:            configs,
 		HiddenConfigs:      []Config{},
 	}

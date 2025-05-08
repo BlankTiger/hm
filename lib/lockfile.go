@@ -20,17 +20,17 @@ const (
 type Lockfile struct {
 	Version            string             `json:"version"`
 	Mode               Mode               `json:"mode"`
-	GlobalDependencies []globalDependency `json:"globalDependencies"`
+	GlobalDependencies []GlobalDependency `json:"globalDependencies"`
 	Configs            []Config           `json:"configs"`
 	HiddenConfigs      []Config           `json:"hiddenConfigs"`
 }
 
-type globalDependency struct {
+type GlobalDependency struct {
 	Instruction *installInstruction `json:"installInstruction"`
 	InstallInfo installInfo         `json:"installInfo"`
 }
 
-func (d *globalDependency) Equal(o *globalDependency) bool {
+func (d *GlobalDependency) Equal(o *GlobalDependency) bool {
 	instMatch := false
 	if d.Instruction != nil && o.Instruction != nil {
 		instMatch = *d.Instruction == *o.Instruction
@@ -39,7 +39,7 @@ func (d *globalDependency) Equal(o *globalDependency) bool {
 	return instMatch && d.InstallInfo.Equal(&o.InstallInfo)
 }
 
-func ContainsGlobalDep(deps []globalDependency, dep globalDependency) bool {
+func ContainsGlobalDep(deps []GlobalDependency, dep GlobalDependency) bool {
 	for _, _dep := range deps {
 		if _dep.Equal(&dep) {
 			return true
@@ -48,14 +48,14 @@ func ContainsGlobalDep(deps []globalDependency, dep globalDependency) bool {
 	return false
 }
 
-func newGlobalDependency(inst *installInstruction) globalDependency {
-	return globalDependency{
+func newGlobalDependency(inst *installInstruction) GlobalDependency {
+	return GlobalDependency{
 		Instruction: inst,
 		InstallInfo: installInfo{},
 	}
 }
 
-func DidGlobalDependenciesChange(depsA, depsB *[]globalDependency) bool {
+func DidGlobalDependenciesChange(depsA, depsB *[]GlobalDependency) bool {
 	namesA := []string{}
 	for _, dep := range *depsA {
 		namesA = append(namesA, dep.Instruction.Pkg)
@@ -79,7 +79,7 @@ func DidGlobalDependenciesChange(depsA, depsB *[]globalDependency) bool {
 	return false
 }
 
-func WereGlobalDependenciesInstalled(deps *[]globalDependency) bool {
+func WereGlobalDependenciesInstalled(deps *[]GlobalDependency) bool {
 	for _, dep := range *deps {
 		if dep.InstallInfo.IsInstalled || dep.InstallInfo.WasUninstalled {
 			return true
@@ -139,7 +139,7 @@ func newLockfile() Lockfile {
 	return Lockfile{
 		Configs:            []Config{},
 		HiddenConfigs:      []Config{},
-		GlobalDependencies: []globalDependency{},
+		GlobalDependencies: []GlobalDependency{},
 		Mode:               Dev,
 		Version:            "0.1.0",
 	}
@@ -206,8 +206,8 @@ type lockfileDiff struct {
 	RemovedConfigs []Config `json:"removedConfigs"`
 	// TODO: is this info necessary?
 	PreviouslyRemovedConfigs []Config           `json:"previouslyRemovedConfigs"`
-	AddedGlobalDeps          []globalDependency `json:"addedGlobalDeps"`
-	RemovedGlobalDeps        []globalDependency `json:"removedGlobalDeps"`
+	AddedGlobalDeps          []GlobalDependency `json:"addedGlobalDeps"`
+	RemovedGlobalDeps        []GlobalDependency `json:"removedGlobalDeps"`
 	ModeChanged              bool               `json:"modeChanged"`
 	VersionChanged           bool               `json:"versionChanged"`
 }
@@ -241,8 +241,8 @@ func DiffLocks(lockBefore, lockAfter Lockfile) lockfileDiff {
 	removedConfigs := []Config{}
 	newlyHiddenConfigs := []Config{}
 	previouslyRemovedConfigs := []Config{}
-	addedGlobalDeps := []globalDependency{}
-	removedGlobalDeps := []globalDependency{}
+	addedGlobalDeps := []GlobalDependency{}
+	removedGlobalDeps := []GlobalDependency{}
 
 	for _, prevConf := range lockBefore.Configs {
 		if !ContainsConfig(lockAfter.Configs, prevConf) {

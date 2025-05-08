@@ -88,7 +88,7 @@ func Uninstall(lock *Lockfile) map[string]installInfo {
 	return forUpdate
 }
 
-func InstallGlobalDependencies(dependencies *[]globalDependency) error {
+func InstallGlobalDependencies(dependencies *[]GlobalDependency) error {
 	Logger.Info("installing global dependencies")
 
 	for idx, dep := range *dependencies {

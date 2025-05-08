@@ -19,8 +19,8 @@ const (
 	DEPENDENCIES_PATH_POSTFIX = "/DEPENDENCIES"
 )
 
-func ParseGlobalDependencies(path string) (res []globalDependency, err error) {
-	res, err = []globalDependency{}, nil
+func ParseGlobalDependencies(path string) (res []GlobalDependency, err error) {
+	res, err = []GlobalDependency{}, nil
 
 	dependencies, err := parseDependencies(path)
 	if err != nil {
@@ -34,7 +34,7 @@ func ParseGlobalDependencies(path string) (res []globalDependency, err error) {
 	return res, err
 }
 
-func installGlobalDependency(dep globalDependency) (info installInfo, err error) {
+func installGlobalDependency(dep GlobalDependency) (info installInfo, err error) {
 	info, err = installInfo{}, nil
 
 	cmd, err := install(*dep.Instruction)
