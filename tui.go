@@ -152,26 +152,38 @@ func initModel(lockfile *lib.Lockfile) model {
 		configsList.AdditionalShortHelpKeys = additionalShortHelpKeys
 	}
 
-	pkgsToInstallList := blist.New([]blist.Item{}, itemDelegate{}, defaultWidth, defaultListHeight)
+	globalDepToIdx := make(map[string]int)
+	globalDepNames := []blist.Item{}
+	for idx, dep := range lockfile.GlobalDependencies {
+		// TODO: check if it works without any spaces
+		for subDep := range strings.SplitSeq(dep.Instruction.Pkg, " ") {
+			globalDepToIdx[subDep] = idx
+			depListItem := listItem("[*] " + subDep)
+			globalDepNames = append(globalDepNames, depListItem)
+		}
+	}
+
+	globalDepsList := blist.New(globalDepNames, itemDelegate{}, defaultWidth, defaultListHeight)
 	{
-		pkgsToInstallList.Title = "Packages (config dependencies) - select ones that should be installed."
-		pkgsToInstallList.SetShowStatusBar(false)
-		pkgsToInstallList.SetFilteringEnabled(true)
-		pkgsToInstallList.Styles.PaginationStyle = paginationStyle
-		pkgsToInstallList.Styles.TitleBar.AlignHorizontal(lg.Center)
-		pkgsToInstallList.Styles.HelpStyle = helpStyle
-		pkgsToInstallList.AdditionalFullHelpKeys = additionalFullHelpKeys
-		pkgsToInstallList.AdditionalShortHelpKeys = additionalShortHelpKeys
+		globalDepsList.Title = "Packages (global dependencies) - select ones that should be installed."
+		globalDepsList.SetShowStatusBar(false)
+		globalDepsList.SetFilteringEnabled(true)
+		globalDepsList.Styles.PaginationStyle = paginationStyle
+		globalDepsList.Styles.TitleBar.AlignHorizontal(lg.Center)
+		globalDepsList.Styles.HelpStyle = helpStyle
+		globalDepsList.AdditionalFullHelpKeys = additionalFullHelpKeys
+		globalDepsList.AdditionalShortHelpKeys = additionalShortHelpKeys
 	}
 
 	return model{
 		lockfile:        lockfile,
 		configs:         allConfigs,
 		configSelection: selected,
+		globalDepToIdx:  globalDepToIdx,
 
-		listHeight:        defaultListHeight,
-		configsList:       configsList,
-		pkgsToInstallList: pkgsToInstallList,
+		listHeight:     defaultListHeight,
+		configsList:    configsList,
+		globalDepsList: globalDepsList,
 	}
 }
 
@@ -208,41 +220,12 @@ func (m model) configsToInstallScreen() string {
 }
 
 func (m model) pkgsToInstallScreen() string {
-	list := m.pkgsToInstallList.View()
+	list := m.globalDepsList.View()
 	var listStyle = listStyle.Width(m.termWidth)
 	return lg.JoinVertical(lg.Top, listStyle.Render(list))
 }
 
 func (m *model) nextScreen() {
-	switch m.currentScreen {
-	case configsToInstall:
-		listItems := []blist.Item{}
-		for idx, isSelected := range m.configSelection {
-			if isSelected {
-				cfg := m.configs[idx]
-				m.selectedConfigs = append(m.selectedConfigs, cfg)
-				m.pkgsToInstall = slices.Concat(m.pkgsToInstall, cfg.Requirements.Dependencies)
-				for _, pkgs := range cfg.Requirements.Dependencies {
-					listItems = append(listItems, listItem(pkgs.Pkg))
-				}
-				if cfg.Requirements.Install != nil {
-					m.pkgsToInstall = append(m.pkgsToInstall, *cfg.Requirements.Install)
-					listItems = append(listItems, listItem(cfg.Requirements.Install.Pkg))
-				}
-			}
-		}
-
-		m.pkgsToInstallList.SetItems(listItems)
-		// TODO: save the result from the screen back to lockfile:
-		// - move selected configs into configs
-		// - move unselected configs into HiddenConfigs
-		// - dont forget that hidden configs by default are prefix with "."
-		//   in the filesystem, so we will either have to edit the fs structure
-		//   or not -> install that config this one time and give the option
-		//   to save users choice which would remove the "." prefix
-	case pkgsToInstall:
-	}
-
 	newScreenId := int(m.currentScreen) + 1
 	if isValidScreen(newScreenId) {
 		m.currentScreen = screen(newScreenId)
