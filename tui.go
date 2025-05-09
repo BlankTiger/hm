@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"slices"
 	"strings"
 
@@ -114,6 +115,11 @@ type model struct {
 	flatGlobalDeps []lib.GlobalDependency
 	// index in the global dependencies list -> is it selected
 	globalDepsSelection map[int]bool
+	// this will be filled after selection is done on the second screen
+	selectedGlobalDeps []lib.GlobalDependency
+
+	choiceSelection map[int]bool
+	userChoices     choices
 
 	currentScreen screen
 	termWidth     int
@@ -121,10 +127,14 @@ type model struct {
 
 	configsList    blist.Model
 	globalDepsList blist.Model
+	choicesList    blist.Model
 	listHeight     int
 }
 
-func initModel(lockfile *lib.Lockfile) model {
+type choices struct {
+	PersistConfigSelection     bool `txt:"Persist config selection"`
+	PersistGlobalDepsSelection bool `txt:"Persist global dependencies selection"`
+}
 
 func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model {
 	selected := make(map[int]bool)
@@ -156,8 +166,6 @@ func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model 
 		configsList.SetShowStatusBar(false)
 		configsList.SetFilteringEnabled(true)
 		configsList.Styles.PaginationStyle = paginationStyle
-		// configsList.Styles.TitleBar.AlignHorizontal(lg.Center)
-		// configsList.Styles.TitleBar = titleStyle
 		configsList.Styles.HelpStyle = helpStyle
 		configsList.AdditionalFullHelpKeys = additionalFullHelpKeys
 		configsList.AdditionalShortHelpKeys = additionalShortHelpKeys
@@ -194,14 +202,27 @@ func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model 
 		globalDepsList.SetShowStatusBar(false)
 		globalDepsList.SetFilteringEnabled(true)
 		globalDepsList.Styles.PaginationStyle = paginationStyle
-		// globalDepsList.Styles.TitleBar.AlignHorizontal(lg.Center)
 		globalDepsList.Styles.HelpStyle = helpStyle
 		globalDepsList.AdditionalFullHelpKeys = additionalFullHelpKeys
 		globalDepsList.AdditionalShortHelpKeys = additionalShortHelpKeys
 	}
 
+	choiceSelection := make(map[int]bool)
+	userChoices := choices{}
+	choicesTxt := buildChoicesListValues(userChoices)
+	choicesList := blist.New(choicesTxt, itemDelegate{}, defaultWidth, defaultListHeight)
+	{
+		choicesList.Title = "Additional information"
+		choicesList.SetShowStatusBar(false)
+		choicesList.SetFilteringEnabled(true)
+		choicesList.Styles.PaginationStyle = paginationStyle
+		choicesList.Styles.HelpStyle = helpStyle
+		choicesList.AdditionalFullHelpKeys = additionalFullHelpKeys
+		choicesList.AdditionalShortHelpKeys = additionalShortHelpKeys
+	}
+
 	return model{
-		lockfile:        lockfile,
+		lockfile: lockfile,
 		conf:     conf,
 
 		configs:         allConfigs,
@@ -210,10 +231,34 @@ func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model 
 		flatGlobalDeps:      flatGlobalDeps,
 		globalDepsSelection: globalDepsSelection,
 
+		userChoices:     userChoices,
+		choiceSelection: choiceSelection,
+
 		listHeight:     defaultListHeight,
 		configsList:    configsList,
 		globalDepsList: globalDepsList,
+		choicesList:    choicesList,
 	}
+}
+
+func buildChoicesListValues(c choices) []blist.Item {
+	list := []blist.Item{}
+
+	t := reflect.TypeOf(c)
+	v := reflect.ValueOf(c)
+	for i := range t.NumField() {
+		field := t.Field(i)
+		value := v.Field(i)
+		prefix := "[ ] "
+		if value.Bool() {
+			prefix = "[*] "
+		}
+
+		tagTxt := field.Tag.Get("txt")
+		list = append(list, listItem(prefix+tagTxt))
+	}
+
+	return list
 }
 
 func (m model) Init() tea.Cmd {
@@ -226,11 +271,14 @@ func (m model) View() string {
 		Width(m.termWidth)
 
 	s := ""
+	var listStyle = listStyle.Width(m.termWidth)
 	switch m.currentScreen {
 	case configsScreen:
-		s = m.configsToInstallScreen()
+		s = m.configsToInstallScreen(listStyle)
 	case globalDepsScreen:
-		s = m.pkgsToInstallScreen()
+		s = m.pkgsToInstallScreen(listStyle)
+	case userChoicesScreen:
+		s = m.collectUserChoicesScreen(listStyle)
 	default:
 		panic("invalid screen id")
 	}
@@ -295,6 +343,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.configsList, cmd = m.configsList.Update(msg)
 	case globalDepsScreen:
 		m.globalDepsList, cmd = m.globalDepsList.Update(msg)
+	case userChoicesScreen:
+		m.choicesList, cmd = m.choicesList.Update(msg)
 	}
 	return m, cmd
 }
@@ -351,6 +401,18 @@ func (m *model) updateAfterSelectingInList() tea.Cmd {
 		}
 
 		return m.globalDepsList.SetItems(updatedItems)
+
+	case userChoicesScreen:
+		cur := m.choicesList.GlobalIndex()
+
+		pv := reflect.ValueOf(&m.userChoices)
+		v := pv.Elem()
+
+		// toggle fields value
+		curValue := v.Field(cur).Bool()
+		v.Field(cur).SetBool(!curValue)
+
+		return m.choicesList.SetItems(buildChoicesListValues(m.userChoices))
 
 	default:
 		panic("we somehow got to an incorrect screen, exiting")
