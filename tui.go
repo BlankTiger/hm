@@ -496,9 +496,6 @@ var help = []helpKey{
 	},
 }
 
-var shortHelpKeys = make([]key.Binding, len(help))
-var longHelpKeys = make([]key.Binding, len(help))
-
 func tuiMain(c *conf.Configuration) error {
 	for idx, h := range help {
 		shortHelpKeys[idx] = h.shortBinding
@@ -521,11 +518,94 @@ func tuiMain(c *conf.Configuration) error {
 	lockAfter.GlobalDependencies = globalDependencies
 
 	{
-		m := initModel(lockAfter)
+		m := initModel(lockAfter, c)
 		p := tea.NewProgram(m)
-		if _, err := p.Run(); err != nil {
-			os.Exit(1)
+
+		_m, err := p.Run()
+		if err != nil {
+			return err
 		}
+
+		m = _m.(model)
+		return executeBasedOnUserSelection(m)
+	}
+}
+
+func executeBasedOnUserSelection(m model) error {
+	c := m.conf
+	lockBefore, err := lib.ReadOrCreateLockfile(c.LockfilePath)
+	if err != nil {
+		c.Logger.Info("encountered an error while trying to read an existing lockfile (probably doesnt exist), creating a new one instead", "err", err)
+		lockBefore = &lib.EmptyLockfile
+	}
+
+	lockAfter := m.lockfile
+	lockAfter.Configs = m.selectedConfigs
+	lockAfter.GlobalDependencies = m.selectedGlobalDeps
+
+	// config/DEPENDENCIES file parsing
+	globalDependencies, err := lib.ParseGlobalDependencies(c.SourceCfgDir)
+	if err != nil {
+		c.Logger.Error("couldn't parse global dependencies file", "path", c.SourceCfgDir, "err", err)
+		return err
+	}
+
+	lockAfter.GlobalDependencies = globalDependencies
+
+	lib.CopyInstallInfo(lockBefore, lockAfter)
+
+	globalDepsChanged := lib.DidGlobalDependenciesChange(&lockBefore.GlobalDependencies, &lockAfter.GlobalDependencies)
+	globalDepsInstalled := lib.WereGlobalDependenciesInstalled(&lockAfter.GlobalDependencies)
+	if c.Install || c.OnlyInstall || c.Upgrade {
+		if globalDepsChanged || !globalDepsInstalled || c.Upgrade {
+			err = lib.InstallGlobalDependencies(&lockAfter.GlobalDependencies)
+			if err != nil {
+				lib.Logger.Error("something went wrong while trying to install global dependencies", "err", err)
+				return err
+			}
+		} else {
+			lib.Logger.Info("global dependencies didn't change since last installation, not installing", "depsChanged", globalDepsChanged, "previouslyInstalled", globalDepsInstalled)
+		}
+	}
+
+	if !c.OnlyUninstall && !c.OnlyInstall {
+		toSymlink := lockAfter.Configs
+
+		if c.CopyMode {
+			err = lib.Copy(c, toSymlink)
+		} else {
+			err = lib.Symlink(c, toSymlink)
+		}
+		if err != nil {
+			c.Logger.Error("encountered an error while copying/symlinking", "error", err)
+			return err
+		}
+
+		toRemove := lockAfter.HiddenConfigs
+		err = lib.Remove(c, toRemove)
+	} else {
+		lib.Logger.Info("skipping copying/symlinking the config, because --only-install or --only-uninstall was passed")
+	}
+
+	if (c.Install || c.OnlyInstall || c.Upgrade) && !c.OnlyUninstall {
+		infoForUpdate := lib.Install(lockAfter)
+		lockAfter.UpdateInstallInfo(infoForUpdate)
+	}
+
+	if (c.Uninstall || c.OnlyUninstall) && !c.OnlyInstall {
+		infoForUpdate := lib.Uninstall(lockAfter)
+		lockAfter.UpdateInstallInfo(infoForUpdate)
+	}
+
+	err = lockAfter.Save(c.LockfilePath, c.DefaultIndent)
+	if err != nil {
+		lib.Logger.Error("something went wrong while trying to save the lockfile", "err", err)
+	}
+
+	diff := lib.DiffLocks(*lockBefore, *lockAfter)
+	err = diff.Save(c.LockfileDiffPath, c.DefaultIndent)
+	if err != nil {
+		lib.Logger.Error("something went wrong while trying to save the lockfile diff", "err", err)
 	}
 
 	return nil
