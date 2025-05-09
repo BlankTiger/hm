@@ -365,7 +365,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.updateAfterSelectingInList()
 
 		case " ":
-			m.nextScreen()
+			return m, m.nextScreen()
 
 		}
 	}
@@ -385,16 +385,28 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *model) updateSize(windowSize tea.WindowSizeMsg) {
 	m.termWidth = windowSize.Width
 	m.termHeight = windowSize.Height
-	m.configsList.SetWidth(m.termWidth)
-	m.configsList.SetHeight(m.termHeight - 10)
-	m.globalDepsList.SetWidth(m.termWidth)
-	m.globalDepsList.SetHeight(m.termHeight - 10)
-	m.configsList.Styles.TitleBar.Width(m.termWidth)
-	m.configsList.Styles.Title.Width(m.termWidth)
-	m.configsList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
-	m.globalDepsList.Styles.TitleBar.Width(m.termWidth)
-	m.globalDepsList.Styles.Title.Width(m.termWidth)
-	m.globalDepsList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
+	heightOffset := 10
+	{
+		m.configsList.SetWidth(m.termWidth)
+		m.configsList.SetHeight(m.termHeight - heightOffset)
+		m.configsList.Styles.TitleBar.Width(m.termWidth)
+		m.configsList.Styles.Title.Width(m.termWidth)
+		m.configsList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
+	}
+	{
+		m.globalDepsList.SetWidth(m.termWidth)
+		m.globalDepsList.SetHeight(m.termHeight - heightOffset)
+		m.globalDepsList.Styles.TitleBar.Width(m.termWidth)
+		m.globalDepsList.Styles.Title.Width(m.termWidth)
+		m.globalDepsList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
+	}
+	{
+		m.choicesList.SetWidth(m.termWidth)
+		m.choicesList.SetHeight(m.termHeight - heightOffset)
+		m.choicesList.Styles.TitleBar.Width(m.termWidth)
+		m.choicesList.Styles.Title.Width(m.termWidth)
+		m.choicesList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
+	}
 }
 
 func (m *model) updateAfterSelectingInList() tea.Cmd {
