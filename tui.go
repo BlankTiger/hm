@@ -31,11 +31,14 @@ type screen int
 const (
 	configsScreen screen = iota
 	globalDepsScreen
+	// will gather information on wheter the user wants to save info from previous
+	// screens to disk (make configs public/private, include/exclude global dependencies)
+	userChoicesScreen
 )
 
 func isValidScreen(screenId int) bool {
 	switch screenId {
-	case int(configsScreen), int(globalDepsScreen):
+	case int(configsScreen), int(globalDepsScreen), int(userChoicesScreen):
 		return true
 
 	default:
