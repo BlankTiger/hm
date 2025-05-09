@@ -287,24 +287,53 @@ func (m model) View() string {
 
 const accentColor = "#17d87e"
 
-func (m model) configsToInstallScreen() string {
+func (m model) configsToInstallScreen(listStyle lg.Style) string {
 	list := m.configsList.View()
-	var listStyle = listStyle.Width(m.termWidth)
 	return lg.JoinVertical(lg.Top, listStyle.Render(list))
 }
 
-func (m model) pkgsToInstallScreen() string {
+func (m model) pkgsToInstallScreen(listStyle lg.Style) string {
 	list := m.globalDepsList.View()
-	var listStyle = listStyle.Width(m.termWidth)
 	return lg.JoinVertical(lg.Top, listStyle.Render(list))
 }
 
-func (m *model) nextScreen() {
+func (m model) collectUserChoicesScreen(listStyle lg.Style) string {
+	list := m.choicesList.View()
+	return lg.JoinVertical(lg.Top, listStyle.Render(list))
+}
+
+func (m *model) nextScreen() tea.Cmd {
+	switch m.currentScreen {
+	case configsScreen:
+		for idx, isSelected := range m.configSelection {
+			if isSelected {
+				m.selectedConfigs = append(m.selectedConfigs, m.configs[idx])
+			}
+		}
+
+	case globalDepsScreen:
+		for idx, isSelected := range m.globalDepsSelection {
+			if isSelected {
+				m.selectedGlobalDeps = append(m.selectedGlobalDeps, m.flatGlobalDeps[idx])
+			}
+		}
+
+	// NOTE: no need for special handling, choices are always saved when we are updating them
+	case userChoicesScreen:
+	}
+
 	newScreenId := int(m.currentScreen) + 1
 	if isValidScreen(newScreenId) {
 		m.currentScreen = screen(newScreenId)
+	} else {
+		return tea.Quit
 	}
+
+	return nil
 }
+
+var shortHelpKeys = make([]key.Binding, len(help))
+var longHelpKeys = make([]key.Binding, len(help))
 
 func additionalFullHelpKeys() []key.Binding {
 	return longHelpKeys
