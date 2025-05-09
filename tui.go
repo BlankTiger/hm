@@ -275,15 +275,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case "tab":
-			updatedListItems := m.updateAfterSelectingInList()
-			var cmd tea.Cmd
-			switch m.currentScreen {
-			case configsScreen:
-				cmd = m.configsList.SetItems(updatedListItems)
-			case globalDepsScreen:
-				cmd = m.globalDepsList.SetItems(updatedListItems)
-			}
-			return m, cmd
+			return m, m.updateAfterSelectingInList()
 
 		case " ":
 			m.nextScreen()
@@ -316,7 +308,7 @@ func (m *model) updateSize(windowSize tea.WindowSizeMsg) {
 	m.globalDepsList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
 }
 
-func (m model) updateAfterSelectingInList() []blist.Item {
+func (m *model) updateAfterSelectingInList() tea.Cmd {
 	switch m.currentScreen {
 	case configsScreen:
 		cur := m.configsList.GlobalIndex()
@@ -334,7 +326,7 @@ func (m model) updateAfterSelectingInList() []blist.Item {
 			}
 		}
 
-		return updatedItems
+		return m.configsList.SetItems(updatedItems)
 
 	case globalDepsScreen:
 		cur := m.globalDepsList.GlobalIndex()
@@ -352,7 +344,7 @@ func (m model) updateAfterSelectingInList() []blist.Item {
 			}
 		}
 
-		return updatedItems
+		return m.globalDepsList.SetItems(updatedItems)
 
 	default:
 		panic("we somehow got to an incorrect screen, exiting")
