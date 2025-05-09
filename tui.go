@@ -21,10 +21,7 @@ import (
 // - [x] I want a list of all configs with information on if they would be copied over
 //   with an ability to change that fact by selecting or unselecting them in a list
 //
-// - [ ] I want a list of all global dependencies that would be installed
-//
-// - [ ] An editor of global dependencies list (they would be permanently stored on disk
-//   after we are done editing)
+// - [x] I want a list of all global dependencies that would be installed
 //
 // - [ ] An option to permanently hide/unhide a config from being copied (makes it so that
 //   I don't have to manually hide them)
