@@ -1,6 +1,7 @@
 package main
 
 import (
+	"blanktiger/hm/configuration"
 	conf "blanktiger/hm/configuration"
 	"blanktiger/hm/instructions"
 	"blanktiger/hm/lib"
@@ -98,6 +99,7 @@ var (
 
 type model struct {
 	lockfile *lib.Lockfile
+	conf     *configuration.Configuration
 
 	// all configs from lockfile (non hidden + hidden)
 	configs []lib.Config
@@ -123,6 +125,8 @@ type model struct {
 }
 
 func initModel(lockfile *lib.Lockfile) model {
+
+func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model {
 	selected := make(map[int]bool)
 	for idx := range lockfile.Configs {
 		selected[idx] = true
@@ -198,6 +202,8 @@ func initModel(lockfile *lib.Lockfile) model {
 
 	return model{
 		lockfile:        lockfile,
+		conf:     conf,
+
 		configs:         allConfigs,
 		configSelection: selected,
 
