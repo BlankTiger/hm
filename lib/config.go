@@ -37,11 +37,6 @@ func (i *installInfo) Equal(o *installInfo) bool {
 	return uninstInstructionsMatch && i.IsInstalled == o.IsInstalled && i.InstallTime == o.InstallTime && i.InstallInstruction == o.InstallInstruction && i.DependenciesInstalled == o.DependenciesInstalled && i.WasUninstalled == o.WasUninstalled && i.UninstallTime == o.UninstallTime
 }
 
-// TODO: remove
-func newInstallInfo() installInfo {
-	return installInfo{}
-}
-
 func NewConfig(name, from, to string, reqs *requirements) Config {
 	newReqs := newRequirements()
 	usedReqs := &newReqs
