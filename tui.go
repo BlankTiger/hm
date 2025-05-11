@@ -552,7 +552,12 @@ func executeBasedOnUserSelection(m model) error {
 		}
 	}
 
-	lockAfter.GlobalDependencies = globalDependencies
+	if m.userChoices.PersistGlobalDepsSelection {
+		err = lockAfter.PersistGlobalDepsSelection(c.SourceCfgDir)
+		if err != nil {
+			return err
+		}
+	}
 
 	lib.CopyInstallInfo(lockBefore, lockAfter)
 

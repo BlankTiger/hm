@@ -90,6 +90,34 @@ func WereGlobalDependenciesInstalled(deps *[]GlobalDependency) bool {
 	return false
 }
 
+func writeGroupedGlobalDependenciesToFile(file *os.File, groupedDeps map[string][]GlobalDependency) error {
+	for method, deps := range groupedDeps {
+		serialized := serializeGlobalDeps(method, deps)
+		written, err := file.WriteString(serialized)
+		if err != nil {
+			return err
+		}
+		Assert(written == len(serialized), "We must write everything to the file")
+	}
+	return nil
+}
+
+func serializeGlobalDeps(method string, deps []GlobalDependency) string {
+	serialized := ""
+	if method != "bash" {
+		serialized = method + ":"
+		for _, dep := range deps {
+			serialized += dep.Instruction.Pkg + " "
+		}
+		serialized = serialized[:len(serialized)-1] + "\n"
+	} else {
+		for _, dep := range deps {
+			serialized += "bash:" + dep.Instruction.Pkg + "\n"
+		}
+	}
+	return serialized
+}
+
 func (l *Lockfile) AppendSkippedConfig(config Config) {
 	l.HiddenConfigs = append(l.HiddenConfigs, config)
 }
@@ -160,6 +188,23 @@ func (l *Lockfile) PersistConfigSelection() error {
 	}
 
 	return nil
+}
+
+func (l Lockfile) PersistGlobalDepsSelection(srcDir string) error {
+	groupedDeps := make(map[string][]GlobalDependency)
+	for _, dep := range l.GlobalDependencies {
+		method := string(dep.Instruction.Method)
+		groupedDeps[method] = append(groupedDeps[method], dep)
+	}
+
+	path := createDepsPath(srcDir)
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return writeGroupedGlobalDependenciesToFile(file, groupedDeps)
 }
 
 func cfgIsHiddenBasedOnFrom(from string) bool {
