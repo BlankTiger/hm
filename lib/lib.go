@@ -356,3 +356,7 @@ func copyFile(from, to string) error {
 	_, err = io.Copy(outputFile, inputFile)
 	return err
 }
+
+func renameDir(from, to string) error {
+	return os.Rename(from, to)
+}
