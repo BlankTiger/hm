@@ -153,11 +153,11 @@ func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model 
 	}
 
 	defaultWidth := 20
-	defaultListHeight := 15
+	defaultListHeight := 25
 
 	configsList := blist.New(allConfigNames, itemDelegate{}, defaultWidth, defaultListHeight)
 	{
-		configsList.Title = "Configs - select the ones you wanna copy/symlink."
+		configsList.Title = "Configs - select the ones you want to copy/symlink."
 		configsList.SetShowStatusBar(false)
 		configsList.SetFilteringEnabled(true)
 		configsList.Styles.PaginationStyle = paginationStyle
@@ -350,13 +350,20 @@ func additionalShortHelpKeys() []key.Binding {
 	return shortHelpKeys
 }
 
+var sizeUpdates = 0
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg.(type) {
 
 	case tea.WindowSizeMsg:
+		sizeUpdates++
 		windowSize := msg.(tea.WindowSizeMsg)
 		m.updateSize(windowSize)
-		return m, nil
+		if sizeUpdates > 1 {
+			return m, tea.ClearScreen
+		} else {
+			return m, nil
+		}
 
 	case tea.KeyMsg:
 		switch msg.(tea.KeyMsg).String() {
@@ -388,25 +395,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *model) updateSize(windowSize tea.WindowSizeMsg) {
 	m.termWidth = windowSize.Width
-	m.termHeight = windowSize.Height
-	heightOffset := 10
 	{
 		m.configsList.SetWidth(m.termWidth)
-		m.configsList.SetHeight(m.termHeight - heightOffset)
 		m.configsList.Styles.TitleBar.Width(m.termWidth)
 		m.configsList.Styles.Title.Width(m.termWidth)
 		m.configsList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
 	}
 	{
 		m.globalDepsList.SetWidth(m.termWidth)
-		m.globalDepsList.SetHeight(m.termHeight - heightOffset)
 		m.globalDepsList.Styles.TitleBar.Width(m.termWidth)
 		m.globalDepsList.Styles.Title.Width(m.termWidth)
 		m.globalDepsList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
 	}
 	{
 		m.choicesList.SetWidth(m.termWidth)
-		m.choicesList.SetHeight(m.termHeight - heightOffset)
 		m.choicesList.Styles.TitleBar.Width(m.termWidth)
 		m.choicesList.Styles.Title.Width(m.termWidth)
 		m.choicesList.Styles.HelpStyle.Width(m.termWidth).Align(lg.Center)
