@@ -57,7 +57,36 @@ hm --manage
 
 # Manage specific packages
 hm --pkgs fish,ghostty
+
+# Use the interactive TUI mode
+hm --tui
 ```
+
+## TUI Mode
+
+`hm` includes an interactive Text User Interface (TUI) mode that allows you to:
+
+- Select which configurations to symlink/copy
+- Choose which global dependencies to install
+- Persist your selections to disk
+
+To use the TUI mode, run:
+
+```bash
+hm --tui
+```
+
+Navigation:
+- Use arrow keys (or j/k) to move up and down
+- Press `Space` to toggle selection
+- Press `Tab` to move to the next screen
+- Press `Shift+Tab` to move to the previous screen
+- Press `q` or `Ctrl+c` to exit
+
+The TUI has three screens:
+1. Config selection - choose which configs to copy/symlink
+2. Global dependencies - select which packages to install
+3. Additional options - decide whether to persist your selections
 
 ## Directory Structure
 
@@ -156,8 +185,9 @@ system:fzf
 system:git
 ```
 
-NOTE: Currently dependencies are only installed. They aren't uninstalled
-when you uninstall the config that owns them.
+NOTE: Currently dependencies are only installed. They aren't uninstalled when
+you uninstall the config that owns them if you don't pass the `--uninstall`
+flag.
 
 ### config/DEPENDENCIES
 
@@ -176,6 +206,27 @@ To show all available logs produced during execution, do:
 ```bash
 hm --dbg
 ```
+
+## Lockfile System
+
+`hm` creates a lockfile (`hmlock.json`) in the target directory to track:
+- What configurations have been deployed
+- What packages have been installed
+- Installation timestamps
+- Hidden configurations
+- Global dependencies
+
+The lockfile format is JSON and includes:
+- `version`: The version of the lockfile format
+- `mode`: Whether configs are symlinked or copied
+- `globalDependencies`: List of globally installed packages
+- `configs`: List of active configuration directories
+- `hiddenConfigs`: List of configuration directories that have been hidden
+
+Additionally, a diff file (`hmlock_diff.json`) is generated to show changes between runs, including:
+- Added/removed configurations
+- Added/removed global dependencies
+- Changes in mode or version
 
 ## How It Works
 
@@ -203,12 +254,3 @@ hm --dbg
 4. If you hide a configuration directory previously managed by `hm`, you can
    uninstall its dependencies by passing doing `hm --uninstall`.
 5. The `.git` directory is always ignored.
-
-## Lockfile
-
-`hm` creates a lockfile (`hmlock.json`) in the target directory to track:
-- What configurations have been deployed
-- What packages have been installed
-- Installation timestamps
-- Hidden configurations
-- Global dependencies
