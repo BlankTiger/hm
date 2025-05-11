@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"slices"
+	"strings"
 )
 
 type Mode string
@@ -135,6 +136,31 @@ configs:
 	}
 }
 
+func (l *Lockfile) PersistConfigSelection() error {
+	for idx, cfg := range l.Configs {
+		if cfgIsHiddenBasedOnFrom(cfg.From) {
+			updatedFrom := unhideConfigPath(cfg.From)
+			err := renameDir(cfg.From, updatedFrom)
+			if err != nil {
+				return err
+			}
+			l.Configs[idx].From = updatedFrom
+		}
+	}
+
+	for idx, cfg := range l.HiddenConfigs {
+		if !cfgIsHiddenBasedOnFrom(cfg.From) {
+			updatedFrom := hideConfigPath(cfg.From)
+			err := renameDir(cfg.From, updatedFrom)
+			if err != nil {
+				return err
+			}
+			l.HiddenConfigs[idx].From = updatedFrom
+		}
+	}
+
+	return nil
+}
 
 func cfgIsHiddenBasedOnFrom(from string) bool {
 	lastSep := strings.LastIndex(from, "/")
