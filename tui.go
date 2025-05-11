@@ -354,12 +354,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.(tea.KeyMsg).String() {
 
-		case "ctrl+c":
+		case "ctrl+c", "q":
 			// TODO: maybe there is a nicer way to do this with bubbletea (something builtin)
 			os.Exit(1)
-
-		case "q":
-			return m, tea.Quit
 
 		case "tab":
 			return m, m.updateAfterSelectingInList()
