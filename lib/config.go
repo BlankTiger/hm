@@ -52,7 +52,7 @@ func NewConfig(name, from, to string, reqs *requirements) Config {
 }
 
 func (c *Config) Equal(o *Config) bool {
-	return c.Name == o.Name && c.From == o.From && c.To == o.To
+	return c.Name == o.Name
 }
 
 func ContainsConfig(configs []Config, c Config) bool {
