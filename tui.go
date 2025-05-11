@@ -300,18 +300,30 @@ func (m model) collectUserChoicesScreen(listStyle lg.Style) string {
 func (m *model) nextScreen() tea.Cmd {
 	switch m.currentScreen {
 	case configsScreen:
+		selectedConfigs := []lib.Config{}
+		hiddenConfigs := []lib.Config{}
 		for idx, isSelected := range m.configSelection {
 			if isSelected {
-				m.selectedConfigs = append(m.selectedConfigs, m.configs[idx])
+				selectedConfigs = append(selectedConfigs, m.configs[idx])
+			} else {
+				hiddenConfigs = append(hiddenConfigs, m.configs[idx])
 			}
 		}
+		m.lockfile.Configs = selectedConfigs
+		m.lockfile.HiddenConfigs = hiddenConfigs
 
 	case globalDepsScreen:
+		selectedGlobalDeps := []lib.GlobalDependency{}
 		for idx, isSelected := range m.globalDepsSelection {
 			if isSelected {
-				m.selectedGlobalDeps = append(m.selectedGlobalDeps, m.flatGlobalDeps[idx])
+				selectedGlobalDeps = append(selectedGlobalDeps, m.flatGlobalDeps[idx])
 			}
+			// TODO: hidden configs should also probably be preserved
+			// else {
+			// 	m.hiddenGlobalDeps = append(m.hiddenGlobalDeps, m.flatGlobalDeps[idx])
+			// }
 		}
+		m.lockfile.GlobalDependencies = selectedGlobalDeps
 
 	// NOTE: no need for special handling, choices are always saved when we are updating them
 	case userChoicesScreen:
@@ -532,14 +544,12 @@ func executeBasedOnUserSelection(m model) error {
 	}
 
 	lockAfter := m.lockfile
-	lockAfter.Configs = m.selectedConfigs
-	lockAfter.GlobalDependencies = m.selectedGlobalDeps
 
-	// config/DEPENDENCIES file parsing
-	globalDependencies, err := lib.ParseGlobalDependencies(c.SourceCfgDir)
-	if err != nil {
-		c.Logger.Error("couldn't parse global dependencies file", "path", c.SourceCfgDir, "err", err)
-		return err
+	if m.userChoices.PersistConfigSelection {
+		err = lockAfter.PersistConfigSelection()
+		if err != nil {
+			return err
+		}
 	}
 
 	lockAfter.GlobalDependencies = globalDependencies
