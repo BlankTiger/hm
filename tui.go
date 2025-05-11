@@ -106,17 +106,12 @@ type model struct {
 	configs []lib.Config
 	// index in the configs list -> is it selected
 	configSelection map[int]bool
-	// this will be filled after selection is done on the first screen
-	// right before going to the next screen
-	selectedConfigs []lib.Config
 
 	// this is all global dependencies that are split, so that when we iterate
 	// it's like all of them are on a separate line in the DEPENDENCIES file
 	flatGlobalDeps []lib.GlobalDependency
 	// index in the global dependencies list -> is it selected
 	globalDepsSelection map[int]bool
-	// this will be filled after selection is done on the second screen
-	selectedGlobalDeps []lib.GlobalDependency
 
 	choiceSelection map[int]bool
 	userChoices     choices
