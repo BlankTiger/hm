@@ -156,9 +156,14 @@ func parseInstallInstruction(inst string) (res *installInstruction, err error) {
 	return res, nil
 }
 
+func createDepsPath(dir string) string {
+	return dir + DEPENDENCIES_PATH_POSTFIX
+}
+
 func parseDependencies(path string) (res []installInstruction, err error) {
 	res = []installInstruction{}
-	file, err := os.Open(path + DEPENDENCIES_PATH_POSTFIX)
+	path = createDepsPath(path)
+	file, err := os.Open(path)
 	if err != nil {
 		// NOTE: file not existing is not an error in this case (can have
 		// config files without dependencies obviously)
