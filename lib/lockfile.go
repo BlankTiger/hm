@@ -200,9 +200,9 @@ func CreateLockBasedOnConfigs(c *configuration.Configuration) (*Lockfile, error)
 			Logger.Info("configs", "skipping", name)
 			// skipping the dot
 			nameIfNotSkipped := name[1:]
-			fromIfNotSkipped := c.SourceCfgDir + "/" + nameIfNotSkipped
 			toIfNotSkipped := c.TargetDir + "/" + nameIfNotSkipped
-			config := NewConfig(nameIfNotSkipped, fromIfNotSkipped, toIfNotSkipped, requirements)
+			from := c.SourceCfgDir + "/" + name
+			config := NewConfig(nameIfNotSkipped, from, toIfNotSkipped, requirements)
 			lockfile.AppendSkippedConfig(config)
 			continue
 		}
