@@ -365,10 +365,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// TODO: maybe there is a nicer way to do this with bubbletea (something builtin)
 			os.Exit(1)
 
-		case "tab":
+		case " ":
 			return m, m.updateAfterSelectingInList()
 
-		case " ":
+		case "tab":
 			return m, m.nextScreen()
 
 		}
@@ -480,22 +480,22 @@ type helpKey struct {
 var help = []helpKey{
 	{
 		shortBinding: key.NewBinding(
-			key.WithKeys("Tab"),
-			key.WithHelp("Tab", "Toggle"),
+			key.WithKeys("Space"),
+			key.WithHelp("Space", "Toggle"),
 		),
 		longBinding: key.NewBinding(
-			key.WithKeys("Tab"),
-			key.WithHelp("Tab", "Toggle current option"),
+			key.WithKeys("Space"),
+			key.WithHelp("Space", "Toggle current option"),
 		),
 	},
 	{
 		shortBinding: key.NewBinding(
-			key.WithKeys("Space"),
-			key.WithHelp("Space", "Next"),
+			key.WithKeys("Tab"),
+			key.WithHelp("Tab", "Next"),
 		),
 		longBinding: key.NewBinding(
-			key.WithKeys("Space"),
-			key.WithHelp("Space", "Go to the next page"),
+			key.WithKeys("Tab"),
+			key.WithHelp("Tab", "Go to the next page"),
 		),
 	},
 }
