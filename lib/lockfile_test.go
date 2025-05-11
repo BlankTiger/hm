@@ -292,3 +292,19 @@ func TestCopyInstallInfo(t *testing.T) {
 	expectedConfigsWithInfo := []Config{cfgA, cfgB, cfgC}
 	assert.Equal(t, lockTo.Configs, expectedConfigsWithInfo)
 }
+
+var pathA = "/home/blah/.config/something"
+var pathB = "/home/blah/.config/.something"
+
+func TestCfgIsHiddenBasedOnFrom(t *testing.T) {
+	assert.False(t, cfgIsHiddenBasedOnFrom(pathA))
+	assert.True(t, cfgIsHiddenBasedOnFrom(pathB))
+}
+
+func TestUnhideConfigPath(t *testing.T) {
+	assert.Equal(t, pathA, unhideConfigPath(pathB))
+}
+
+func TestHideConfigPath(t *testing.T) {
+	assert.Equal(t, pathB, hideConfigPath(pathA))
+}

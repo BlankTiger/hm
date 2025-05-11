@@ -135,6 +135,27 @@ configs:
 	}
 }
 
+
+func cfgIsHiddenBasedOnFrom(from string) bool {
+	lastSep := strings.LastIndex(from, "/")
+	dirName := from[lastSep+1:]
+	return dirName[0] == '.'
+}
+
+func unhideConfigPath(from string) string {
+	lastSep := strings.LastIndex(from, "/")
+	dirName := from[lastSep+1:]
+	Assert(dirName[0] == '.', "Passed config must be hidden")
+	return from[:lastSep+1] + dirName[1:]
+}
+
+func hideConfigPath(from string) string {
+	lastSep := strings.LastIndex(from, "/")
+	dirName := from[lastSep+1:]
+	Assert(dirName[0] != '.', "Passed config must not be hidden")
+	return from[:lastSep+1] + "." + dirName
+}
+
 func newLockfile() Lockfile {
 	return Lockfile{
 		Configs:            []Config{},
