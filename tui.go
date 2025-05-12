@@ -109,7 +109,6 @@ type model struct {
 	userChoices     choices
 
 	cliArgsSelection map[int]bool
-	cliArgs          args
 
 	currentScreen screen
 	termWidth     int
@@ -126,8 +125,6 @@ type choices struct {
 	PersistConfigSelection     bool `txt:"Persist config selection"`
 	PersistGlobalDepsSelection bool `txt:"Persist global dependencies selection"`
 }
-
-type args struct{}
 
 func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model {
 	selected := make(map[int]bool)
@@ -215,8 +212,7 @@ func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model 
 	}
 
 	cliArgsSelection := make(map[int]bool)
-	cliArgs := args{}
-	cliArgsTxt := buildListValuesBasedOnType(cliArgs)
+	cliArgsTxt := buildListValuesBasedOnType(*conf)
 	cliArgsList := blist.New(cliArgsTxt, itemDelegate{}, defaultWidth, defaultListHeight)
 	{
 		cliArgsList.Title = "Program flags"
@@ -241,7 +237,6 @@ func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model 
 		userChoices:     userChoices,
 		choiceSelection: choiceSelection,
 
-		cliArgs:          cliArgs,
 		cliArgsSelection: cliArgsSelection,
 
 		listHeight:     defaultListHeight,
@@ -252,20 +247,29 @@ func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model 
 	}
 }
 
-func buildListValuesBasedOnType(value interface{}) []blist.Item {
+// this function skips all values that are not bool in the passed in `value`
+func buildListValuesBasedOnType(value any) []blist.Item {
 	list := []blist.Item{}
 
 	t := reflect.TypeOf(value)
 	v := reflect.ValueOf(value)
 	for i := range t.NumField() {
 		field := t.Field(i)
+		if field.Type.Kind() != reflect.Bool {
+			continue
+		}
+
+		tagTxt := field.Tag.Get("txt")
+		if tagTxt == "exclude" {
+			continue
+		}
+
 		value := v.Field(i)
 		prefix := "[ ] "
 		if value.Bool() {
 			prefix = "[*] "
 		}
 
-		tagTxt := field.Tag.Get("txt")
 		list = append(list, listItem(prefix+tagTxt))
 	}
 
@@ -301,6 +305,8 @@ const accentColor = "#17d87e"
 
 func (m *model) nextScreen() tea.Cmd {
 	switch m.currentScreen {
+	// NOTE: no need for special handling, cli args are saved automatically while updating them
+	case cliArgsScreen:
 	case configsScreen:
 		selectedConfigs := []lib.Config{}
 		hiddenConfigs := []lib.Config{}
@@ -438,14 +444,14 @@ func (m *model) updateAfterSelectingInList() tea.Cmd {
 	case cliArgsScreen:
 		cur := m.cliArgsList.GlobalIndex()
 
-		pv := reflect.ValueOf(&m.cliArgs)
+		pv := reflect.ValueOf(m.conf)
 		v := pv.Elem()
 
 		// toggle fields value
 		curValue := v.Field(cur).Bool()
 		v.Field(cur).SetBool(!curValue)
 
-		return m.cliArgsList.SetItems(buildListValuesBasedOnType(m.cliArgs))
+		return m.cliArgsList.SetItems(buildListValuesBasedOnType(*m.conf))
 
 	case configsScreen:
 		cur := m.configsList.GlobalIndex()
