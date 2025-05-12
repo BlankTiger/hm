@@ -556,7 +556,7 @@ var help = []helpKey{
 		),
 		longBinding: key.NewBinding(
 			key.WithKeys("Enter"),
-			key.WithHelp("Enter", "Finish (on last screen) run"),
+			key.WithHelp("Enter", "Finish (on last screen), run"),
 		),
 	},
 }
