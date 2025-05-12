@@ -108,10 +108,14 @@ type model struct {
 	choiceSelection map[int]bool
 	userChoices     choices
 
+	cliArgsSelection map[int]bool
+	cliArgs          args
+
 	currentScreen screen
 	termWidth     int
 	termHeight    int
 
+	cliArgsList    blist.Model
 	configsList    blist.Model
 	globalDepsList blist.Model
 	choicesList    blist.Model
@@ -122,6 +126,8 @@ type choices struct {
 	PersistConfigSelection     bool `txt:"Persist config selection"`
 	PersistGlobalDepsSelection bool `txt:"Persist global dependencies selection"`
 }
+
+type args struct{}
 
 func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model {
 	selected := make(map[int]bool)
@@ -196,7 +202,7 @@ func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model 
 
 	choiceSelection := make(map[int]bool)
 	userChoices := choices{}
-	choicesTxt := buildChoicesListValues(userChoices)
+	choicesTxt := buildListValuesBasedOnType(userChoices)
 	choicesList := blist.New(choicesTxt, itemDelegate{}, defaultWidth, defaultListHeight)
 	{
 		choicesList.Title = "Additional information"
@@ -206,6 +212,20 @@ func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model 
 		choicesList.Styles.HelpStyle = helpStyle
 		choicesList.AdditionalFullHelpKeys = additionalFullHelpKeys
 		choicesList.AdditionalShortHelpKeys = additionalShortHelpKeys
+	}
+
+	cliArgsSelection := make(map[int]bool)
+	cliArgs := args{}
+	cliArgsTxt := buildListValuesBasedOnType(cliArgs)
+	cliArgsList := blist.New(cliArgsTxt, itemDelegate{}, defaultWidth, defaultListHeight)
+	{
+		cliArgsList.Title = "Program flags"
+		cliArgsList.SetShowStatusBar(false)
+		cliArgsList.SetFilteringEnabled(true)
+		cliArgsList.Styles.PaginationStyle = paginationStyle
+		cliArgsList.Styles.HelpStyle = helpStyle
+		cliArgsList.AdditionalFullHelpKeys = additionalFullHelpKeys
+		cliArgsList.AdditionalShortHelpKeys = additionalShortHelpKeys
 	}
 
 	return model{
@@ -221,18 +241,22 @@ func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model 
 		userChoices:     userChoices,
 		choiceSelection: choiceSelection,
 
+		cliArgs:          cliArgs,
+		cliArgsSelection: cliArgsSelection,
+
 		listHeight:     defaultListHeight,
+		cliArgsList:    cliArgsList,
 		configsList:    configsList,
 		globalDepsList: globalDepsList,
 		choicesList:    choicesList,
 	}
 }
 
-func buildChoicesListValues(c choices) []blist.Item {
+func buildListValuesBasedOnType(value interface{}) []blist.Item {
 	list := []blist.Item{}
 
-	t := reflect.TypeOf(c)
-	v := reflect.ValueOf(c)
+	t := reflect.TypeOf(value)
+	v := reflect.ValueOf(value)
 	for i := range t.NumField() {
 		field := t.Field(i)
 		value := v.Field(i)
@@ -483,7 +507,7 @@ func (m *model) updateAfterSelectingInList() tea.Cmd {
 		curValue := v.Field(cur).Bool()
 		v.Field(cur).SetBool(!curValue)
 
-		return m.choicesList.SetItems(buildChoicesListValues(m.userChoices))
+		return m.choicesList.SetItems(buildListValuesBasedOnType(m.userChoices))
 
 	default:
 		panic("we somehow got to an incorrect screen, exiting")
