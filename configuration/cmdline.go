@@ -8,19 +8,22 @@ import (
 	// "reflect"
 )
 
+// excluded flags must be always at the end of boolean flags
 type Configuration struct {
 	// flags
-	CopyMode      bool
-	Debug         bool
-	Tui           bool
-	Install       bool
-	OnlyInstall   bool
-	Uninstall     bool
-	OnlyUninstall bool
-	Upgrade       bool
-	PkgsTxt       string
-	SourceDir     string
-	TargetDir     string
+	CopyMode      bool `txt:"copy mode"`
+	Install       bool `txt:"install"`
+	OnlyInstall   bool `txt:"only install"`
+	Uninstall     bool `txt:"uninstall"`
+	OnlyUninstall bool `txt:"only uninstall"`
+	Upgrade       bool `txt:"upgrade"`
+
+	Debug bool `txt:"exclude"`
+	Tui   bool `txt:"exclude"`
+
+	PkgsTxt   string
+	SourceDir string
+	TargetDir string
 
 	Pkgs             []string
 	SourceCfgDir     string
