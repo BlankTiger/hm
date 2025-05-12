@@ -278,40 +278,26 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) View() string {
-	var windowStyle = lg.NewStyle().
-		Width(m.termWidth)
-
-	s := ""
-	var listStyle = listStyle.Width(m.termWidth)
+	list := ""
 	switch m.currentScreen {
+	case cliArgsScreen:
+		list = m.cliArgsList.View()
 	case configsScreen:
-		s = m.configsToInstallScreen(listStyle)
+		list = m.configsList.View()
 	case globalDepsScreen:
-		s = m.pkgsToInstallScreen(listStyle)
+		list = m.globalDepsList.View()
 	case userChoicesScreen:
-		s = m.collectUserChoicesScreen(listStyle)
+		list = m.choicesList.View()
 	default:
 		panic("invalid screen id")
 	}
-	return windowStyle.Render(s)
+
+	listStyle := listStyle.Width(m.termWidth)
+	windowStyle := lg.NewStyle().Width(m.termWidth)
+	return windowStyle.Render(lg.JoinVertical(lg.Top, listStyle.Render(list)))
 }
 
 const accentColor = "#17d87e"
-
-func (m model) configsToInstallScreen(listStyle lg.Style) string {
-	list := m.configsList.View()
-	return lg.JoinVertical(lg.Top, listStyle.Render(list))
-}
-
-func (m model) pkgsToInstallScreen(listStyle lg.Style) string {
-	list := m.globalDepsList.View()
-	return lg.JoinVertical(lg.Top, listStyle.Render(list))
-}
-
-func (m model) collectUserChoicesScreen(listStyle lg.Style) string {
-	list := m.choicesList.View()
-	return lg.JoinVertical(lg.Top, listStyle.Render(list))
-}
 
 func (m *model) nextScreen() tea.Cmd {
 	switch m.currentScreen {
