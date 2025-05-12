@@ -22,7 +22,8 @@ import (
 type screen int
 
 const (
-	configsScreen screen = iota
+	cliArgsScreen screen = iota
+	configsScreen
 	globalDepsScreen
 	// will gather information on wheter the user wants to save info from previous
 	// screens to disk (make configs public/private, include/exclude global dependencies)
@@ -31,7 +32,7 @@ const (
 
 func isValidScreen(screenId int) bool {
 	switch screenId {
-	case int(configsScreen), int(globalDepsScreen), int(userChoicesScreen):
+	case int(cliArgsScreen), int(configsScreen), int(globalDepsScreen), int(userChoicesScreen):
 		return true
 
 	default:
@@ -388,6 +389,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	switch m.currentScreen {
+	case cliArgsScreen:
+		m.cliArgsList, cmd = m.cliArgsList.Update(msg)
 	case configsScreen:
 		m.configsList, cmd = m.configsList.Update(msg)
 	case globalDepsScreen:
@@ -422,6 +425,18 @@ func (m *model) updateSize(windowSize tea.WindowSizeMsg) {
 
 func (m *model) updateAfterSelectingInList() tea.Cmd {
 	switch m.currentScreen {
+	case cliArgsScreen:
+		cur := m.cliArgsList.GlobalIndex()
+
+		pv := reflect.ValueOf(&m.cliArgs)
+		v := pv.Elem()
+
+		// toggle fields value
+		curValue := v.Field(cur).Bool()
+		v.Field(cur).SetBool(!curValue)
+
+		return m.cliArgsList.SetItems(buildListValuesBasedOnType(m.cliArgs))
+
 	case configsScreen:
 		cur := m.configsList.GlobalIndex()
 		m.configSelection[cur] = !m.configSelection[cur]
