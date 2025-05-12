@@ -340,8 +340,6 @@ func (m *model) nextScreen() tea.Cmd {
 	newScreenId := int(m.currentScreen) + 1
 	if isValidScreen(newScreenId) {
 		m.currentScreen = screen(newScreenId)
-	} else {
-		return tea.Quit
 	}
 
 	return nil
@@ -393,6 +391,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case " ":
 			return m, m.updateAfterSelectingInList()
+
+		case "enter":
+			if !isValidScreen(int(m.currentScreen) + 1) {
+				return m, tea.Quit
+			}
 
 		case "tab":
 			return m, m.nextScreen()
@@ -544,6 +547,16 @@ var help = []helpKey{
 		longBinding: key.NewBinding(
 			key.WithKeys("Shift+Tab"),
 			key.WithHelp("Shift+Tab", "Go to the previous page"),
+		),
+	},
+	{
+		shortBinding: key.NewBinding(
+			key.WithKeys("Enter"),
+			key.WithHelp("Enter", "Finish (on last screen)"),
+		),
+		longBinding: key.NewBinding(
+			key.WithKeys("Enter"),
+			key.WithHelp("Enter", "Finish (on last screen) run"),
 		),
 	},
 }
