@@ -157,8 +157,8 @@ func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model 
 		configsList.SetFilteringEnabled(true)
 		configsList.Styles.PaginationStyle = paginationStyle
 		configsList.Styles.HelpStyle = helpStyle
-		configsList.AdditionalFullHelpKeys = additionalFullHelpKeys
-		configsList.AdditionalShortHelpKeys = additionalShortHelpKeys
+		configsList.AdditionalFullHelpKeys = additionalFullHelpKeysGeneral
+		configsList.AdditionalShortHelpKeys = additionalShortHelpKeysGeneral
 	}
 
 	globalDepsSelection := make(map[int]bool)
@@ -193,8 +193,21 @@ func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model 
 		globalDepsList.SetFilteringEnabled(true)
 		globalDepsList.Styles.PaginationStyle = paginationStyle
 		globalDepsList.Styles.HelpStyle = helpStyle
-		globalDepsList.AdditionalFullHelpKeys = additionalFullHelpKeys
-		globalDepsList.AdditionalShortHelpKeys = additionalShortHelpKeys
+		globalDepsList.AdditionalFullHelpKeys = additionalFullHelpKeysGeneral
+		globalDepsList.AdditionalShortHelpKeys = additionalShortHelpKeysGeneral
+	}
+
+	cliArgsSelection := make(map[int]bool)
+	cliArgsTxt := buildListValuesBasedOnType(*conf)
+	cliArgsList := blist.New(cliArgsTxt, itemDelegate{}, defaultWidth, defaultListHeight)
+	{
+		cliArgsList.Title = "Program flags"
+		cliArgsList.SetShowStatusBar(false)
+		cliArgsList.SetFilteringEnabled(true)
+		cliArgsList.Styles.PaginationStyle = paginationStyle
+		cliArgsList.Styles.HelpStyle = helpStyle
+		cliArgsList.AdditionalFullHelpKeys = additionalFullHelpKeysGeneral
+		cliArgsList.AdditionalShortHelpKeys = additionalShortHelpKeysGeneral
 	}
 
 	choiceSelection := make(map[int]bool)
@@ -207,21 +220,8 @@ func initModel(lockfile *lib.Lockfile, conf *configuration.Configuration) model 
 		choicesList.SetFilteringEnabled(true)
 		choicesList.Styles.PaginationStyle = paginationStyle
 		choicesList.Styles.HelpStyle = helpStyle
-		choicesList.AdditionalFullHelpKeys = additionalFullHelpKeys
-		choicesList.AdditionalShortHelpKeys = additionalShortHelpKeys
-	}
-
-	cliArgsSelection := make(map[int]bool)
-	cliArgsTxt := buildListValuesBasedOnType(*conf)
-	cliArgsList := blist.New(cliArgsTxt, itemDelegate{}, defaultWidth, defaultListHeight)
-	{
-		cliArgsList.Title = "Program flags"
-		cliArgsList.SetShowStatusBar(false)
-		cliArgsList.SetFilteringEnabled(true)
-		cliArgsList.Styles.PaginationStyle = paginationStyle
-		cliArgsList.Styles.HelpStyle = helpStyle
-		cliArgsList.AdditionalFullHelpKeys = additionalFullHelpKeys
-		cliArgsList.AdditionalShortHelpKeys = additionalShortHelpKeys
+		choicesList.AdditionalFullHelpKeys = additionalFullHelpKeysLastScreen
+		choicesList.AdditionalShortHelpKeys = additionalShortHelpKeysLastScreen
 	}
 
 	return model{
@@ -356,15 +356,26 @@ func (m *model) prevScreen() tea.Cmd {
 	return nil
 }
 
-var shortHelpKeys = make([]key.Binding, len(help))
-var longHelpKeys = make([]key.Binding, len(help))
+var shortHelpKeysGeneral = make([]key.Binding, len(helpGeneral))
+var longHelpKeysGeneral = make([]key.Binding, len(helpGeneral))
 
-func additionalFullHelpKeys() []key.Binding {
-	return longHelpKeys
+func additionalFullHelpKeysGeneral() []key.Binding {
+	return longHelpKeysGeneral
 }
 
-func additionalShortHelpKeys() []key.Binding {
-	return shortHelpKeys
+func additionalShortHelpKeysGeneral() []key.Binding {
+	return shortHelpKeysGeneral
+}
+
+var shortHelpKeysLastScreen = make([]key.Binding, len(helpGeneral)+len(helpLastScreen))
+var longHelpKeysLastScreen = make([]key.Binding, len(helpGeneral)+len(helpLastScreen))
+
+func additionalFullHelpKeysLastScreen() []key.Binding {
+	return longHelpKeysLastScreen
+}
+
+func additionalShortHelpKeysLastScreen() []key.Binding {
+	return shortHelpKeysLastScreen
 }
 
 var sizeUpdates = 0
@@ -518,7 +529,7 @@ type helpKey struct {
 	longBinding  key.Binding
 }
 
-var help = []helpKey{
+var helpGeneral = []helpKey{
 	{
 		shortBinding: key.NewBinding(
 			key.WithKeys("Space"),
@@ -549,22 +560,33 @@ var help = []helpKey{
 			key.WithHelp("Shift+Tab", "Go to the previous page"),
 		),
 	},
+}
+
+var helpLastScreen = []helpKey{
 	{
 		shortBinding: key.NewBinding(
 			key.WithKeys("Enter"),
-			key.WithHelp("Enter", "Finish (on last screen)"),
+			key.WithHelp("Enter", "Run"),
 		),
 		longBinding: key.NewBinding(
 			key.WithKeys("Enter"),
-			key.WithHelp("Enter", "Finish (on last screen), run"),
+			key.WithHelp("Enter", "Finish selection and run"),
 		),
 	},
 }
 
 func tuiMain(c *conf.Configuration) error {
-	for idx, h := range help {
-		shortHelpKeys[idx] = h.shortBinding
-		longHelpKeys[idx] = h.longBinding
+	for idx, h := range helpGeneral {
+		shortHelpKeysGeneral[idx] = h.shortBinding
+		longHelpKeysGeneral[idx] = h.longBinding
+		shortHelpKeysLastScreen[idx] = h.shortBinding
+		longHelpKeysLastScreen[idx] = h.longBinding
+	}
+
+	for idxOffset, h := range helpLastScreen {
+		idx := idxOffset + len(helpGeneral) - 1
+		shortHelpKeysLastScreen[idx] = h.shortBinding
+		longHelpKeysLastScreen[idx] = h.longBinding
 	}
 
 	lockAfter, err := lib.CreateLockBasedOnConfigs(c)
