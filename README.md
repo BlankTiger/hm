@@ -14,6 +14,7 @@ project (very slow, probably a skill issue, I know).
 2. Installing, uninstalling, and upgrading packages based on instruction files
 3. Tracking changes with a lockfile system
 4. Managing dependencies for your configurations
+5. Providing an interactive TUI for easier configuration management
 
 ## Installation
 
@@ -60,6 +61,9 @@ hm --pkgs fish,ghostty
 
 # Use the interactive TUI mode
 hm --tui
+
+# Enable debug output
+hm --dbg
 ```
 
 ## TUI Mode
@@ -83,10 +87,11 @@ Navigation:
 - Press `Shift+Tab` to move to the previous screen
 - Press `q` or `Ctrl+c` to exit
 
-The TUI has three screens:
-1. Config selection - choose which configs to copy/symlink
-2. Global dependencies - select which packages to install
-3. Additional options - decide whether to persist your selections
+The TUI has four screens:
+1. Program flags - manage CLI flags interactively
+2. Config selection - choose which configs to copy/symlink
+3. Global dependencies - select which packages to install
+4. Additional options - decide whether to persist your selections
 
 ## Directory Structure
 
@@ -164,16 +169,29 @@ For example:
 
 This makes your configuration files more portable across different systems.
 
-Similar thing is implemented for the `aur` method. It will try to find the aur
-package manager that is installed.
+Similarly, the `aur` method will detect which AUR helper is installed on your system
+(paru, yay, pacaur, or aurman) and use it automatically.
 
 ### UNINSTALL
 
-The `UNINSTALL` file is treated as a bash script. When `INSTALL` contains
-packages installed via methods other than `bash`, then this file is redundant,
-otherwise you can uninstall the package installed with `bash` method by
-specyfing how to do that in this file. You can also use this file as a cleanup
-script, because it will always run during uninstallation.
+The `UNINSTALL` file is treated as a bash script that will be executed during uninstallation.
+
+When `INSTALL` contains packages installed via methods other than `bash`, the `UNINSTALL` file is
+optional since `hm` can generate uninstallation commands automatically.
+
+However, for packages installed with the `bash` method, you need to provide an `UNINSTALL` file
+to specify how to remove the package. You can also use this file as a cleanup script, since it
+will always run during uninstallation regardless of installation method.
+
+Example `UNINSTALL` file:
+
+```bash
+#!/bin/bash
+# Clean up configuration files
+rm -rf ~/.cache/my-program
+# Run the program's uninstaller
+/opt/my-program/uninstall.sh
+```
 
 ### DEPENDENCIES
 
@@ -185,27 +203,63 @@ system:fzf
 system:git
 ```
 
+Each line follows the same `method:package` format as the `INSTALL` file.
+
 NOTE: Currently dependencies are only installed. They aren't uninstalled when
 you uninstall the config that owns them if you don't pass the `--uninstall`
 flag.
 
 ### config/DEPENDENCIES
 
-The `config/DEPENDENCIES` file is structurally the same as all the other
-`DEPENDENCIES` files in individual config directories. Packages specified in
-this file are installed regardless of managed configs before executing
-`INSTALL` instructions for individual configs.
+The `config/DEPENDENCIES` file (at the root of your config directory) specifies global dependencies
+that should be installed regardless of which configurations are active. These are installed before
+any configuration-specific packages.
 
+This is useful for installing tools that are required by the installation process itself or for
+packages that are common dependencies for multiple configurations.
+
+Example:
+
+```
+system:git
+system:curl
+cargo:cargo-binstall
+```
 
 ## Advanced Usage
 
 ### Debug Mode
 
-To show all available logs produced during execution, do:
+To show all available logs produced during execution:
 
 ```bash
 hm --dbg
 ```
+
+### Managing Specific Packages
+
+To install, uninstall, or upgrade only specific packages:
+
+```bash
+hm --pkgs fish,nvim --install
+hm --pkgs tmux --uninstall
+hm --pkgs fish,nvim --upgrade
+```
+
+### Hidden Configurations
+
+Configurations with directories prefixed with a dot (e.g., `.tmux/`) are considered "hidden"
+and won't be symlinked/copied or installed by default. This allows you to temporarily disable
+configurations without completely removing them.
+
+To uninstall packages associated with hidden configurations:
+
+```bash
+hm --uninstall
+```
+
+In TUI mode, you can toggle which configurations are active (not hidden) and
+choose whether to persist these selections to disk.
 
 ## Lockfile System
 
@@ -231,8 +285,8 @@ Additionally, a diff file (`hmlock_diff.json`) is generated to show changes betw
 ## How It Works
 
 1. `hm` scans the source directory for configuration folders
-2. Parses `config/DEPENDENCIES` file (if exists) for instructions
-   and executes them
+2. Parses `config/DEPENDENCIES` file (if exists) for global dependencies
+   and installs them
 3. For each configuration, it:
    - Copies or symlinks the files to the target location
    - Parses `INSTALL`, `DEPENDENCIES` and `UNINSTALL` files if present
@@ -250,7 +304,9 @@ Additionally, a diff file (`hmlock_diff.json`) is generated to show changes betw
    `system:cargo-binstall` instruction in the `config/DEPENDENCIES` file.
 2. If installation fails for any package, `hm` will continue processing other
    configurations.
-3. Hidden directories (starting with a dot) are not managed by `hm`.
+3. Hidden directories (starting with a dot) are not managed by `hm` by default.
 4. If you hide a configuration directory previously managed by `hm`, you can
-   uninstall its dependencies by passing doing `hm --uninstall`.
+   uninstall its dependencies by passing `--uninstall`.
 5. The `.git` directory is always ignored.
+6. When running in TUI mode, the command-line flags still apply but can be
+   modified in the first screen of the interface.
